@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import * as tf from '@tensorflow/tfjs';
-import { cameraWithTensors } from '@tensorflow/tfjs-react-native';
 import { MapView } from 'react-native-maps';
-
-// Placeholder for camera (requires expo-camera later)
-const TensorCamera = cameraWithTensors(() => null); // Dummy for now
 
 export default function App() {
   const [result, setResult] = useState('Initializing AI...');
   const [isTfReady, setIsTfReady] = useState(false);
 
   useEffect(() => {
-    // Initialize TensorFlow
     (async () => {
       await tf.ready();
       setIsTfReady(true);
@@ -22,7 +17,7 @@ export default function App() {
 
   const handleImageScan = () => {
     if (isTfReady) {
-      setResult('Mahi Mahi detected!'); // Dummy result
+      setResult('Mahi Mahi detected!'); // Placeholder
     }
   };
 
