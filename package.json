@@ -20,7 +20,7 @@
     "expo-media-library": "~16.0.5",
     "expo-gl": "~16.0.7",
     "expo-asset": "~11.0.4",
-    "react": "18.3.2",
+    "react": "18.3.1",
     "react-native": "0.76.9",
     "react-native-maps": "1.20.1",
     "react-native-screens": "~4.4.0",
