@@ -11,7 +11,6 @@ import {
   getRecentSightings, getSightingCount,
   getUniqueSpeciesCount, formatTimestamp,
 } from '../services/database';
-import { isModelLoaded } from '../services/fishIdentifier';
 import fishSpecies from '../data/fishSpecies.json';
 
 export default function HomeScreen({ navigation }) {
@@ -65,8 +64,8 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.subtitle}>Fish Identification & Tracking</Text>
           </View>
           <View style={styles.aiStatus}>
-            <View style={[styles.aiDot, { backgroundColor: isModelLoaded() ? '#00d4aa' : '#ffb74d' }]} />
-            <Text style={styles.aiLabel}>{isModelLoaded() ? 'AI Ready' : 'AI Loading'}</Text>
+            <View style={[styles.aiDot, { backgroundColor: '#00d4aa' }]} />
+            <Text style={styles.aiLabel}>Claude Vision</Text>
           </View>
         </View>
 
@@ -80,16 +79,48 @@ export default function HomeScreen({ navigation }) {
             <Ionicons name="camera" size={36} color="#0a1628" />
             <View style={{ marginLeft: 16 }}>
               <Text style={styles.scanTitle}>Identify a Fish</Text>
-              <Text style={styles.scanSub}>Point camera at a fish — works offline</Text>
+              <Text style={styles.scanSub}>Structure-based · UAE species · Claude Vision</Text>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={22} color="#0a1628" style={{ opacity: 0.6 }} />
         </TouchableOpacity>
 
+        {/* ── Pollution Monitoring CTA ────────────────── */}
+        <TouchableOpacity
+          style={[styles.scanCta, { backgroundColor: '#ff6b6b', marginTop: 12 }]}
+          onPress={() => navigation.navigate('Pollution')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.scanCtaInner}>
+            <Ionicons name="water" size={36} color="#ffffff" />
+            <View style={{ marginLeft: 16 }}>
+              <Text style={[styles.scanTitle, { color: '#ffffff' }]}>Monitor Water Quality</Text>
+              <Text style={[styles.scanSub, { color: '#ffffff', opacity: 0.9 }]}>Check for pollution and environmental threats</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color="#ffffff" style={{ opacity: 0.8 }} />
+        </TouchableOpacity>
+
+        {/* ── Molecular Marker Search CTA ──────────────── */}
+        <TouchableOpacity
+          style={[styles.scanCta, { backgroundColor: '#7c3aed', marginTop: 12 }]}
+          onPress={() => navigation.navigate('Molecular')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.scanCtaInner}>
+            <Ionicons name="flask" size={36} color="#ffffff" />
+            <View style={{ marginLeft: 16 }}>
+              <Text style={[styles.scanTitle, { color: '#ffffff' }]}>Search by Molecular Markers</Text>
+              <Text style={[styles.scanSub, { color: '#ffffff', opacity: 0.9 }]}>eDNA, SNPs, or microsatellites</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color="#ffffff" style={{ opacity: 0.8 }} />
+        </TouchableOpacity>
+
         {/* ── Stats row ───────────────────────────────── */}
         <View style={styles.statsRow}>
-          <StatCard icon="fish-outline" value={stats.total} label="Sightings" color="#00d4aa" />
-          <StatCard icon="layers-outline" value={stats.species} label="Species" color="#4fc3f7" />
+          <StatCard icon="fish-outline" value={loading ? null : stats.total} label="Sightings" color="#00d4aa" />
+          <StatCard icon="layers-outline" value={loading ? null : stats.species} label="Species" color="#4fc3f7" />
           <StatCard icon="library-outline" value={fishSpecies.length} label="In Database" color="#ffb74d" />
         </View>
 
@@ -134,7 +165,7 @@ function StatCard({ icon, value, label, color }) {
   return (
     <View style={styles.statCard}>
       <Ionicons name={icon} size={22} color={color} />
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={[styles.statValue, { color }]}>{value ?? '--'}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -183,10 +214,10 @@ function EmptyState({ onPress }) {
 }
 
 const TIPS = [
-  { emoji: '☀️', text: 'Good lighting improves accuracy — natural light works best' },
-  { emoji: '📸', text: 'Capture the whole fish in frame, including fins and tail' },
-  { emoji: '🔍', text: 'For small fish, get as close as possible and keep steady' },
-  { emoji: '📶', text: 'Once the AI model downloads, no internet required' },
+  { emoji: '☀️', text: 'Good lighting helps — natural light and a steady hand work best' },
+  { emoji: '📸', text: 'Show the whole fish in frame: snout, fins, and tail are key' },
+  { emoji: '🐟', text: 'ID is based on body structure, not colour — mud and sand are fine' },
+  { emoji: '📍', text: 'Allow location access to narrow results to your coastal region' },
 ];
 
 const styles = StyleSheet.create({

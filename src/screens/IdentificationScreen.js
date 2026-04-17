@@ -37,8 +37,12 @@ export default function IdentificationScreen({ route, navigation }) {
         if (status === 'granted') {
           const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
           setLocation(loc.coords);
+        } else {
+          console.warn('[IdentificationScreen] Location permission not granted — sighting will be saved without coordinates.');
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[IdentificationScreen] Location error:', err.message);
+      }
     })();
   }, []);
 
@@ -101,20 +105,69 @@ export default function IdentificationScreen({ route, navigation }) {
 
         <Animated.View style={[styles.body, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
 
-          {/* ── Top match banner ─────────────────────── */}
+          {/* ── Top match hero ───────────────────────────── */}
           <View style={styles.topMatchCard}>
-            <View>
-              <Text style={styles.topMatchLabel}>Top Match</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.topMatchLabel}>TOP MATCH</Text>
               <Text style={styles.topMatchName}>{topResult.species.name}</Text>
               <Text style={styles.topMatchSci}>{topResult.species.scientificName}</Text>
+              {topResult.species.localName ? (
+                <Text style={styles.topMatchLocal}>{topResult.species.localName}</Text>
+              ) : null}
             </View>
             <View style={styles.topMatchConfBlock}>
               <Text style={[styles.topMatchPct, { color: confColor }]}>
-                {Math.round(topResult.confidence * 100)}%
+                {Math.round((topResult.confidence ?? 0) * 100)}%
               </Text>
               <Text style={styles.topMatchConfLabel}>confidence</Text>
             </View>
           </View>
+
+          {/* ── Structural analysis observations ─────────── */}
+          {topResult.key_features && topResult.key_features.length > 0 ? (
+            <View style={styles.analysisCard}>
+              <Text style={styles.analysisTitle}>Structural Observations</Text>
+              <Text style={styles.analysisSubtitle}>Identified by body structure — colour ignored (field conditions)</Text>
+              {topResult.key_features.map((feat, i) => (
+                <View key={i} style={styles.featureRow}>
+                  <Ionicons name="checkmark-circle" size={15} color="#00d4aa" />
+                  <Text style={styles.featureRowText}>{feat}</Text>
+                </View>
+              ))}
+              {topResult.reasoning ? (
+                <View style={styles.reasoningBox}>
+                  <Text style={styles.reasoningText}>{topResult.reasoning}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <View style={styles.analysisCard}>
+              <Text style={styles.analysisTitle}>Structural Analysis</Text>
+              <Text style={styles.analysisSubtitle}>Identified by body structure — colour ignored (field conditions)</Text>
+              <View style={styles.featureGrid}>
+                <View style={styles.featureItem}>
+                  <Ionicons name="git-merge-outline" size={20} color="#00d4aa" />
+                  <Text style={styles.featureLabel}>Snout Profile</Text>
+                  <Text style={styles.featureValue}>Blunt vs pointed</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Ionicons name="expand-outline" size={20} color="#00d4aa" />
+                  <Text style={styles.featureLabel}>Body Depth</Text>
+                  <Text style={styles.featureValue}>Depth-to-length ratio</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Ionicons name="radio-outline" size={20} color="#00d4aa" />
+                  <Text style={styles.featureLabel}>Fin Structure</Text>
+                  <Text style={styles.featureValue}>Spine count & shape</Text>
+                </View>
+                <View style={styles.featureItem}>
+                  <Ionicons name="layers" size={20} color="#00d4aa" />
+                  <Text style={styles.featureLabel}>Tail Shape</Text>
+                  <Text style={styles.featureValue}>Forked, lunate, truncate</Text>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* ── Tab bar ──────────────────────────────── */}
           <View style={styles.tabBar}>
@@ -136,9 +189,19 @@ export default function IdentificationScreen({ route, navigation }) {
                     <Text style={styles.resultRankText}>{idx + 1}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.resultName}>{item.species.name}</Text>
+                    <View style={styles.resultNameRow}>
+                      <Text style={styles.resultName}>{item.species.name}</Text>
+                      <Text style={[styles.resultPct, { color: getConfidenceColor(item.confidence) }]}>
+                        {Math.round((item.confidence ?? 0) * 100)}%
+                      </Text>
+                    </View>
                     <Text style={styles.resultSci}>{item.species.scientificName}</Text>
                     <ConfidenceBar confidence={item.confidence} height={5} />
+                    {item.key_features && item.key_features.length > 0 && (
+                      <Text style={styles.resultFeatures} numberOfLines={2}>
+                        {item.key_features.slice(0, 2).join(' · ')}
+                      </Text>
+                    )}
                   </View>
                 </TouchableOpacity>
               ))}
@@ -237,9 +300,44 @@ const styles = StyleSheet.create({
   topMatchLabel: { color: '#8ab4d4', fontSize: 11, fontWeight: '600', marginBottom: 4 },
   topMatchName: { color: '#e8f4fd', fontSize: 22, fontWeight: '800' },
   topMatchSci: { color: '#8ab4d4', fontSize: 13, fontStyle: 'italic', marginTop: 3 },
-  topMatchConfBlock: { alignItems: 'flex-end' },
+  topMatchLocal: { color: '#4fc3f7', fontSize: 12, marginTop: 4 },
+  topMatchConfBlock: { alignItems: 'flex-end', marginLeft: 12 },
   topMatchPct: { fontSize: 36, fontWeight: '800' },
   topMatchConfLabel: { color: '#8ab4d4', fontSize: 11 },
+
+  analysisCard: {
+    backgroundColor: '#0f2044',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#142954',
+  },
+  analysisTitle: { color: '#e8f4fd', fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  analysisSubtitle: { color: '#8ab4d4', fontSize: 12, marginBottom: 14 },
+
+  featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 7 },
+  featureRowText: { color: '#e8f4fd', fontSize: 13, lineHeight: 19, flex: 1 },
+  reasoningBox: {
+    marginTop: 12,
+    backgroundColor: '#142954',
+    borderRadius: 10,
+    padding: 12,
+  },
+  reasoningText: { color: '#8ab4d4', fontSize: 12, lineHeight: 18 },
+
+  featureGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  featureItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#142954',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    gap: 6,
+  },
+  featureLabel: { color: '#e8f4fd', fontSize: 12, fontWeight: '600', textAlign: 'center' },
+  featureValue: { color: '#8ab4d4', fontSize: 10, textAlign: 'center', lineHeight: 14 },
 
   tabBar: {
     flexDirection: 'row',
@@ -273,8 +371,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resultRankText: { color: '#00d4aa', fontSize: 13, fontWeight: '700' },
-  resultName: { color: '#e8f4fd', fontSize: 14, fontWeight: '600', marginBottom: 2 },
+  resultNameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  resultName: { color: '#e8f4fd', fontSize: 14, fontWeight: '600', marginBottom: 2, flex: 1 },
+  resultPct: { fontSize: 14, fontWeight: '700', marginLeft: 8 },
   resultSci: { color: '#8ab4d4', fontSize: 11, fontStyle: 'italic', marginBottom: 6 },
+  resultFeatures: { color: '#4a7fa8', fontSize: 11, marginTop: 4, lineHeight: 16 },
 
   saveBtn: {
     flexDirection: 'row',
