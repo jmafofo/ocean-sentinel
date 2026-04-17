@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "uae-anglers-hub",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/josephmafofo/Documents/Official/UAEAngler/uae-anglers-hub", "run", "dev"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}
