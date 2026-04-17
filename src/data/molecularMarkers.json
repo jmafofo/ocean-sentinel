@@ -1,0 +1,236 @@
+{
+  "yellowfin-tuna": {
+    "coiBarcode": "ATAGCCCTACTTTGCCATGATTGGGGTGATGGATCAGGAATAATAGTTACCGTTGATCTTCTTGTCCGAACTAGAACTTAGGCAACCAGGCTCACTCTTTGGCAACGATCAAATCTACAACGTAATTGTGACTGCACATGCCTTCGTAATAATCTTCTTTATAGTAATACCTATTATGATTGGAGGATTCGGAAACTGATTAGTTCCCATAATGATCGGAGCTCCAGACATGGCATTTCCTCGGATAAACAACATAGAGATACCAACGATTGTTAAACAACGGAAAATTTGAAC",
+    "snpProfile": [
+      { "snpName": "TUNA_SNP_001", "allele1": "C", "allele2": "C" },
+      { "snpName": "TUNA_SNP_002", "allele1": "T", "allele2": "T" },
+      { "snpName": "TUNA_SNP_003", "allele1": "A", "allele2": "A" },
+      { "snpName": "SCOMBRIDAE_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "PELAGIC_SNP_001", "allele1": "C", "allele2": "T" }
+    ],
+    "microsatellites": {
+      "Ttat-1": [189, 191],
+      "Ttat-2": [134, 140],
+      "Ttat-3": [245, 251],
+      "Ttat-4": [178, 182]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Atlantic, Pacific, Indian Ocean",
+      "populationMarkers": ["WAO", "EPO", "IPO"]
+    },
+    "sexDeterminationMarkers": {
+      "ZF4A_F": "female specific",
+      "ZF4A_M": "male specific"
+    }
+  },
+  "mahi-mahi": {
+    "coiBarcode": "ATGCCACTATTCGCCGTTATTGGTGGATGAGATCGGGACACGACTATTTACCGTTGATCTTCTGGCCGAGCTAGAACTCGGTCAGCCTGGTCTAATTGTCGGAGACGACCAAATCTACAACGTGATCGTGACTGCACATGCCTTTGTAATAATTTTCTTCATAGTGATACCCATTATGATTGGAGGATTCGGTAACTGATTAGTCCCCATGATACTAGGAGCCCCAGACATGGCGTTTCCTCGGATAAACAACATGAGATATTGACGATTGTTAAACAACGAGAAGTTTGAGC",
+    "snpProfile": [
+      { "snpName": "CORYPHAENA_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "CORYPHAENA_SNP_002", "allele1": "G", "allele2": "G" },
+      { "snpName": "CORYPHAENA_SNP_003", "allele1": "A", "allele2": "C" },
+      { "snpName": "TROPICAL_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "PELAGIC_SNP_001", "allele1": "G", "allele2": "G" }
+    ],
+    "microsatellites": {
+      "Cau-1": [156, 160],
+      "Cau-2": [198, 204],
+      "Cau-3": [267, 273],
+      "Cau-4": [145, 149]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Atlantic, Pacific, Indian Ocean",
+      "populationMarkers": ["NAT", "CAR", "PAC"]
+    }
+  },
+  "red-snapper": {
+    "coiBarcode": "ATAGCACTATTCGCCGTTATTGGTGGATGAGATCGGGACTCGACTATTCACCGTTGATCTTCTTGTCCGAACTAGAACTCGGTCAGCCTGGATCAATCGTCGGTGATGACCAAATCTACAACGTGATCGTGACTGCACATGCCTTTGTAATAATTTTCTTCATAGTGATACCCATTATGATTGGAGGATTTGGTAACTGATTAGTCCCCATGATACTAGGAGCTCCGGACATGGCGTTTCCTCGGATAAACAACATGAGATATTGACGATTGTTAAACAATGAGATGTTTGAGC",
+    "snpProfile": [
+      { "snpName": "LUTJANUS_SNP_001", "allele1": "A", "allele2": "A" },
+      { "snpName": "LUTJANUS_SNP_002", "allele1": "T", "allele2": "C" },
+      { "snpName": "REEF_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "SNAPPER_SNP_001", "allele1": "C", "allele2": "C" },
+      { "snpName": "SHALLOW_WATER_SNP_001", "allele1": "A", "allele2": "T" }
+    ],
+    "microsatellites": {
+      "LcaG01": [185, 191],
+      "LcaG03": [142, 148],
+      "LcaG06": [234, 242],
+      "LcaG18": [156, 162]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Gulf of Mexico, Atlantic, Caribbean",
+      "populationMarkers": ["GOM", "ATL", "CAR"]
+    }
+  },
+  "clownfish": {
+    "coiBarcode": "ATAGCACTTATTCGCCGTTATTGGAGGCTGAGACGGAACAGTTACAGCCGTATTCCTGTTGGGGATCTAGAACTCGGTCAGCCAGGCCTATTCATTGGAGACGATCAAATCTACAACGTGATTGTGACTGCACATGCCTTTGTAATAATTTTCTTTATAGTGATACCCATTATGATTGGTGGATTTGGTAACTGATTAGTCCCCATAATATTAGGAGCCCCTGACATGGCATTTCCTCGGATAAACAACATAAGATATTGACGATTGTTAAACAACGAGATTGTTTGAGC",
+    "snpProfile": [
+      { "snpName": "AMPHIPRION_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "POMACENTRIDAE_SNP_001", "allele1": "C", "allele2": "C" },
+      { "snpName": "CLOWNFISH_SNP_001", "allele1": "A", "allele2": "G" },
+      { "snpName": "ANEMONE_SYMBIONT_MARKER", "allele1": "G", "allele2": "G" },
+      { "snpName": "SEX_DETERMINATION_SNP", "allele1": "C", "allele2": "T" }
+    ],
+    "microsatellites": {
+      "Aoc59": [124, 130],
+      "Aoc78": [167, 171],
+      "Aoc79": [198, 204],
+      "Aoc91": [145, 151]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Pacific, Indian Ocean, Red Sea, Arabian Gulf",
+      "populationMarkers": ["PAC_W", "PAC_C", "IND", "RED"]
+    },
+    "sexDeterminationMarkers": {
+      "sdY": "male specific",
+      "gynogenesis_marker": "female specific"
+    }
+  },
+  "lionfish": {
+    "coiBarcode": "ATAGCCCTACTACTGCCGTATTGGGAGGATGAGATCGAGATAGCCACATTCCTGCTGGAGACCTAGAACTTGGGCAGCCTGGTCTACTATTCGGTGATGATCAAATTTATAAAGTATGTCGTGACTGCACATGCATTTGTAATAATCTTCTTCATAGTGATACCCATTATTATTGGAGGATTCGGTAACTGATTAGTTCCTATAATATTAGGAGCTCCCGACATGGCGTTTCCTCGGATAAACAACATAAGATATTGACGATTGTTAAACAACGAGACTGTATAAAC",
+    "snpProfile": [
+      { "snpName": "PTEROIS_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "SCORPAENIDAE_SNP_001", "allele1": "A", "allele2": "A" },
+      { "snpName": "VENOM_SNP_001", "allele1": "T", "allele2": "C" },
+      { "snpName": "INVASIVE_MARKER_SNP", "allele1": "T", "allele2": "T" },
+      { "snpName": "INDO_PACIFIC_SNP_001", "allele1": "C", "allele2": "C" }
+    ],
+    "microsatellites": {
+      "Pv-114": [198, 202],
+      "Pv-134": [156, 162],
+      "Pv-147": [234, 240],
+      "Pv-205": [145, 151]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Indo-Pacific, Red Sea, Indian Ocean, Atlantic",
+      "populationMarkers": ["IND", "RED", "IAF", "ALT"]
+    }
+  },
+  "atlantic-salmon": {
+    "coiBarcode": "ATAGCACTATTCGCCGTTATTGGAGGCTGAGACTGAAACAGCCACATTCCCGCTATCCTCATTGGGGATCTAGAACTCGGTCAACCAGGACTGCTTATCGGTGATGATCAAATCTACAACGTATCATGACGGCACATGCCTTTGTAATAATTTTCTTTATAGTAATACCCATTATTATTGGATGACTTGGAAACTGATTAGTACCCATAGATACTAGGAGCCCCTGACATGGCGTTTCCTCGGATAAACACATAAGATATTGACGACTGTTAAACAACGAGACGGTTTGAAAC",
+    "snpProfile": [
+      { "snpName": "SALMO_SNP_001", "allele1": "C", "allele2": "C" },
+      { "snpName": "SALMONIDAE_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "ANADROMOUS_SNP_001", "allele1": "A", "allele2": "G" },
+      { "snpName": "ATLANTIC_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "SPAWN_MIGRATION_SNP_001", "allele1": "C", "allele2": "T" }
+    ],
+    "microsatellites": {
+      "SSOSL311": [204, 210],
+      "SSOSL417": [145, 151],
+      "SSSP3016": [267, 273],
+      "Ssa197": [178, 184]
+    },
+    "geographicRanges": {
+      "mitochondrial": "North Atlantic, Arctic, European rivers, North American rivers",
+      "populationMarkers": ["NRIB", "NFIR", "GOM", "PER"]
+    },
+    "populationStructure": {
+      "NRIB": "North American river-born",
+      "NFIR": "North American farmed-influenced",
+      "GOM": "Gulf of Mexico",
+      "PER": "European"
+    }
+  },
+  "blue-marlin": {
+    "coiBarcode": "ATAGCCCTACTACTGCCGTAATGGGAGGCTGAGACGAGAAAGCCACATTCCCGCTATCCTCGTAGGAGATCTAGAACTCGGTCAACCAGGACTACTCATTGGTGATGATCAAATCTACAACGTATCATCACGGCACATGCATTTGTAATAATCTTCTTCATAGTGATACCCATTATTATTGGATGACTTGGTAACTGATTAGTACCCATGATACTCGGAGCTCCTGACATGGCGTTTCCTCGGATAAACAACATAAGATATTGACGATTGTTAAACAACGAGACTGTATAAAC",
+    "snpProfile": [
+      { "snpName": "MAKAIRA_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "ISTIOPHORIDAE_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "BILLFISH_SNP_001", "allele1": "A", "allele2": "A" },
+      { "snpName": "DEEP_DIVER_SNP_001", "allele1": "C", "allele2": "T" },
+      { "snpName": "OCEAN_MIGRANT_SNP_001", "allele1": "G", "allele2": "G" }
+    ],
+    "microsatellites": {
+      "Mni-101": [245, 251],
+      "Mni-103": [189, 195],
+      "Mni-111": [167, 173],
+      "Mni-115": [234, 240]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Atlantic, Pacific, Indian Ocean, Arabian Gulf",
+      "populationMarkers": ["WAT", "EPO", "EPO_PAC"]
+    }
+  },
+  "swordfish": {
+    "coiBarcode": "ATAGCCCTCCTACTGCCGTAATGGGAGGCTGAGACGAGAAAGCCACATTCCCGCTATCTTCGTTGGGGATCTAGAGCTTGGTCAACCAGGACTACTCATTGGTGATGATCAAATTTATAAAGTATGTCGCACGGCACATGCATTTGTAATAATTTTCTTCATAGTGATACCCATTATTATTGGAGGATTCGGTAACTGATTAGTCCCCATGATACCAGGAGCCCCAGACATGGCGTTTCCTCGGATAAACAACATAAGATATTGACGATTGTTAAACAATGATACTGTATAAAC",
+    "snpProfile": [
+      { "snpName": "XIPHIAS_SNP_001", "allele1": "A", "allele2": "A" },
+      { "snpName": "XIPHIIDAE_SNP_001", "allele1": "C", "allele2": "C" },
+      { "snpName": "HEAT_ORGAN_SNP_001", "allele1": "G", "allele2": "T" },
+      { "snpName": "SOLITARY_BEHAVIOR_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "BILL_DEVELOPMENT_SNP_001", "allele1": "A", "allele2": "G" }
+    ],
+    "microsatellites": {
+      "Xgl-88": [198, 204],
+      "Xgl-92": [156, 162],
+      "Xgl-99": [234, 240],
+      "Xgl-134": [145, 151]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Atlantic, Pacific, Indian Ocean, Mediterranean",
+      "populationMarkers": ["NAT", "MED", "PAC"]
+    }
+  },
+  "barracuda": {
+    "coiBarcode": "ATAGCCCTACTACTGCCGTAATGGGAGGCTGAGACGAGAAAGCCACATTCCAGCTATCCTCGTAGGAGATCTAGAGCTTGGTCAACCAGGACTATTATTAGGTGATGATCAAATCTACAACGTATCATGACGGCACATGCATTTGTAATAATTTTCTTCATAGTGATACCCATTATGATTGGATGATTTGGTAACTGATTAGTCCCCATGATACTAGGAGCTCCCGACATGGCGTTTCCTCGGATAAACAACATAAGATATTGACGACTGTTAAACAACGAGACTGTATAAAC",
+    "snpProfile": [
+      { "snpName": "SPHYRAENA_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "PREDATOR_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "SHARP_TEETH_SNP_001", "allele1": "C", "allele2": "T" },
+      { "snpName": "CIGUATERA_TOXIN_SNP_001", "allele1": "A", "allele2": "A" },
+      { "snpName": "COASTAL_REEF_SNP_001", "allele1": "G", "allele2": "G" }
+    ],
+    "microsatellites": {
+      "Sbm-01": [189, 195],
+      "Sbm-12": [234, 240],
+      "Sbm-25": [167, 173],
+      "Sbm-31": [145, 151]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Atlantic, Pacific, Indian Ocean, Red Sea, Arabian Gulf",
+      "populationMarkers": ["NAT", "PAC", "IND"]
+    }
+  },
+  "pufferfish": {
+    "coiBarcode": "ATAGCACTTATTCGCCGTTATCGGTGGCTGAGACGAGAAAGCCACATTCCTGCTATCCTCGTTGGGGATCTAGAGCTTGGTCAGCCAGGACTATTATTAGGTGATGATCAAATCTACAACGTATCGTGACTGCACATGCATTTGTAATAATTTTCTTCATAGTGATACCCATTATGATTGGATGACTTGGTAACTGATTAGTCCCCATGATACTAGGAGCTCCTGACATGGCGTTTCCTCGGATAAACAACATAAGATATTGACGACTGTTAAACAACGAGACTGTATAAAC",
+    "snpProfile": [
+      { "snpName": "TETRAODONTIDAE_SNP_001", "allele1": "A", "allele2": "A" },
+      { "snpName": "TOXIN_SYNTHESIS_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "TETRODOTOXIN_SNP_001", "allele1": "T", "allele2": "C" },
+      { "snpName": "INFLATION_BEHAVIOR_SNP_001", "allele1": "C", "allele2": "C" },
+      { "snpName": "TROPICAL_REEF_SNP_001", "allele1": "A", "allele2": "G" }
+    ],
+    "microsatellites": {
+      "Tni-01": [156, 162],
+      "Tni-06": [234, 240],
+      "Tni-17": [145, 151],
+      "Tni-24": [198, 204]
+    },
+    "geographicRanges": {
+      "mitochondrial": "Pacific, Indian Ocean, Atlantic, Red Sea",
+      "populationMarkers": ["SCS", "IND", "ATL"]
+    }
+  },
+  "hammerhead-shark": {
+    "coiBarcode": "ATAGCCCTACTACTGCCGTAATGGGAGGCTGAGACTGAGAAAGCCACATTCCCGCTATCCTCGTTGGGGATCTAGAGCTTGGTCAACCAGGACTACTTATAGGTGATGATCAAATCTACAACGTATCGTGACTGCACATGCATTTGTAATAATCTTCTTCATAGTGATACCCATTATGATTGGATGATTTGGTAACTGATTAGTCCCCATGATACTAGGAGCTCCTGACATGGCGTTTCCTCGGATAAACAACATAAGATATTGACGACTGTTAAACAACGAGACTGTATAAAC",
+    "snpProfile": [
+      { "snpName": "SPHYRNA_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "SHARK_SNP_001", "allele1": "G", "allele2": "G" },
+      { "snpName": "HAMMER_HEAD_SNP_001", "allele1": "A", "allele2": "C" },
+      { "snpName": "STINGRAY_PREDATOR_SNP_001", "allele1": "T", "allele2": "T" },
+      { "snpName": "ENDANGERED_MARKER_SNP_001", "allele1": "C", "allele2": "C" }
+    ],
+    "microsatellites": {
+      "Smo-01": [189, 195],
+      "Smo-06": [234, 240],
+      "Smo-13": [167, 173],
+      "Smo-20": [145, 151]
+    ],
+    "geographicRanges": {
+      "mitochondrial": "Atlantic, Pacific, Indian Ocean, Arabian Gulf",
+      "populationMarkers": ["NAT", "PAC", "IND"]
+    }
+  }
+}

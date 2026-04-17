@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
 
@@ -10,10 +10,12 @@ import CameraScreen from '../screens/CameraScreen';
 import IdentificationScreen from '../screens/IdentificationScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import MapScreen from '../screens/MapScreen';
+import PollutionScreen from '../screens/PollutionScreen';
+import MolecularMarkerScreen from '../screens/MolecularMarkerScreen';
 
 const Tab = createBottomTabNavigator();
-const CameraStack = createStackNavigator();
-const HomeStack = createStackNavigator();
+const CameraStack = createNativeStackNavigator();
+const HomeStack = createNativeStackNavigator();
 
 const THEME = {
   background: '#0a1628',
@@ -30,7 +32,7 @@ function CameraStackNavigator() {
     <CameraStack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: THEME.background },
+        contentStyle: { backgroundColor: THEME.background },
       }}
     >
       <CameraStack.Screen name="CameraCapture" component={CameraScreen} />
@@ -44,11 +46,13 @@ function HomeStackNavigator() {
     <HomeStack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: THEME.background },
+        contentStyle: { backgroundColor: THEME.background },
       }}
     >
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Identification" component={IdentificationScreen} />
+      <HomeStack.Screen name="Pollution" component={PollutionScreen} />
+      <HomeStack.Screen name="Molecular" component={MolecularMarkerScreen} />
     </HomeStack.Navigator>
   );
 }
