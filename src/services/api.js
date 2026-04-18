@@ -98,52 +98,119 @@ async function identifyFishDirect(base64, location) {
     ? `The photo was taken at coordinates ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)} (UAE / Arabian Gulf region).`
     : 'Assume the fish is from UAE or Arabian Gulf waters.';
 
-  const prompt = `You are an expert marine biologist and fish taxonomist specialising in the fish fauna of the UAE, Arabian Gulf, and Gulf of Oman. You have decades of field experience identifying fish from beach and boat photos taken by anglers in the field.
+  const prompt = `You are an expert marine biologist and fish taxonomist specialising in the fish fauna of the UAE, Arabian Gulf, and Gulf of Oman. You have decades of field experience identifying fish from angler beach photos where fish are wet, sandy, and muddy.
 
-Analyse this fish image carefully and identify the species.
+Analyse this fish image and identify the species.
 ${locationHint}
 
-CONTEXT — FIELD CONDITIONS:
-This image was taken by an angler on a UAE beach. The fish may be:
-- Freshly landed and still alive, flapping on wet sand
-- Coated in wet sand, mud, or algae from thrashing
-- Partially buried or lying awkwardly
-- Photographed quickly at an odd angle
-This means colour, scale pattern, and surface markings are COMPLETELY UNRELIABLE. Ignore them entirely. You must identify from structure alone.
+━━━ CRITICAL FIELD CONTEXT ━━━
+UAE beach fishing photos are taken immediately after landing. The fish is typically:
+• Alive and thrashing on wet sand — coated in a layer of sand, mud, or algae
+• Lying at an awkward angle; may be partially buried
+• Shot quickly in harsh sunlight or shade with a phone camera
 
-STEP 1 — OBSERVE STRUCTURE FIRST:
-- Snout profile: blunt & short vs long & pointed
-- Mouth position: terminal/inferior, size, protractile or not
-- Body depth-to-length ratio: deep/oval vs elongated/fusiform
-- Dorsal fin: single continuous or notched, count of spines visible
-- Tail shape: forked, lunate, truncate, or rounded
-- Scale size: large & visible vs small & fine
-- Preopercle edge: smooth or serrated
-- Head profile: steep vs gradual slope
+CONSEQUENCE: Colour, scale pattern, lateral stripe colour, and fin colour are COMPLETELY UNRELIABLE and must be IGNORED. You MUST identify from body structure and geometry alone.
 
-STEP 2 — APPLY THESE TAXONOMIC KEYS FOR UAE SPECIES:
+━━━ STEP 0 — TRIAGE VISIBILITY ━━━
+Before classifying, note which parts of the fish you can actually resolve through the dirt/sand:
+• CLEAR: body outline/silhouette, caudal fin shape, mouth shape, snout profile, eye position
+• OFTEN VISIBLE: dorsal fin count and general shape, pectoral fin length, head profile
+• UNRELIABLE WHEN DIRTY: scale pattern, fin colour, lateral stripe colour, belly markings
+Only use features you can genuinely resolve.
 
-SNOUT SHORT & BLUNT + SMALL MOUTH → likely Haemulidae (Grunters):
-  • Silver Grunter (Pomadasys argenteus): deep oval body, blunt snout, small inferior mouth, large silvery scales, faint lateral stripes, XII dorsal spines, smooth preopercle, slightly forked tail. Very common UAE beach find.
-  • Javelin Grunter (Pomadasys kaakan): similar but more elongated, dark spots on body.
+━━━ STEP 1 — MEASURE THE SILHOUETTE ━━━
+The body outline is visible even through heavy mud. Estimate these ratios:
 
-SNOUT LONG & POINTED + LARGE MOUTH → likely Lethrinidae (Emperors):
-  • Spangled Emperor (Lethrinus nebulosus): long pointed snout, large mouth, cheek partly scaleless, olive-grey with pale spots.
-  • Pink Ear Emperor (Lethrinus lentjan): pink/red tinge on cheek, pointed snout.
+BODY DEPTH / STANDARD LENGTH (depth at deepest point ÷ total length, excluding tail):
+  • > 0.45 → very deep / disc-shaped (Sparidae, Siganidae, deep Carangidae)
+  • 0.30–0.45 → moderately deep (Haemulidae, Lethrinidae, Serranidae/Grouper)
+  • 0.15–0.30 → elongated / fusiform (Mugilidae, Carangidae, Scombridae, Lutjanidae)
+  • < 0.15 → very elongated / eel-like (Sphyraenidae/Barracuda, Trichiuridae/Ribbonfish)
 
-DEEP BODY + INCISOR-LIKE TEETH VISIBLE → likely Sparidae (Breams):
-  • Yellowfin Seabream (Acanthopagrus latus): deep compressed body, yellow fins, small mouth.
-  • Goldlined Seabream (Rhabdosargus sarba): golden lateral stripes, deep body.
-  • Sobaity (Sparidentex hasta): deep body, silvery, pointed snout for a bream.
+HEAD LENGTH / STANDARD LENGTH:
+  • > 0.33 → large head (Serranidae, Platycephalidae, some Carangidae)
+  • 0.25–0.33 → normal (most reef fish)
+  • < 0.25 → small head (Mugilidae, Siganidae)
 
-ELONGATED + LARGE SCALES + THICK LIPS → likely Mugilidae (Mullets).
-ELONGATED + FORKED TAIL + LATERAL LINE CURVES DOWN → likely Carangidae (Trevally/Queenfish).
-VERY DEEP BODY + SMALL MOUTH + RABBIT-LIKE FACE → likely Siganidae (Rabbitfish/Safi).
-LARGE MOUTH + MOTTLED PATTERN + ROUNDED TAIL → likely Serranidae (Grouper/Hamour).
+CAUDAL PEDUNCLE: slender & keeled vs thick & muscular (muscular = fast pelagic species)
 
-STEP 3 — RANK your top 5 candidates by structural fit, not colour.
+DORSAL HUMP POSITION: is the highest point of the back near the head, middle, or uniform?
 
-Return ONLY valid JSON — no markdown, no commentary:
+━━━ STEP 2 — DIRT-RESISTANT STRUCTURAL FEATURES ━━━
+Even on a sand-caked fish, observe:
+• Snout: blunt & rounded vs pointed & conical vs depressed/flat
+• Mouth: terminal / inferior / superior; protractile or fixed; size relative to head
+• Eye: size (large vs small) and position (high on head vs mid-lateral vs lower)
+• Dorsal fin: one continuous fin vs clearly two separate fins; notched or smooth junction
+• Caudal fin shape: deeply forked / lunate / emarginate / truncate / rounded — often mud-free
+• Lateral line path: curves sharply downward mid-body (Carangidae), runs straight, or arched
+• Pectoral fin: short & rounded vs long & pointed (length relative to body depth)
+• Preopercle/cheek edge: smooth vs serrated (check under any dirt at angle)
+• Body cross-section: strongly compressed (laterally flat) vs rounded / tubular
+
+━━━ STEP 3 — UAE TAXONOMIC KEYS (structural only) ━━━
+
+DEEP BODY (>0.45) + SMALL MOUTH + INCISOR TEETH visible → Sparidae (Breams/Porgies):
+  • Sobaity (Sparidentex hasta): deepest body of UAE breams, pointed snout, large silvery scales, single dorsal XII spines + 11 rays, slightly forked tail — the premier UAE sport bream
+  • Yellowfin Seabream / Farsh (Acanthopagrus latus): very deep compressed oval body, steep head profile, small mouth, deeply forked tail
+  • Goldlined Seabream / Sarba (Rhabdosargus sarba): deep oval, steep forehead, multiple golden longitudinal stripes when clean
+  • Twobar Seabream / Sheri (Acanthopagrus bifasciatus): two dark vertical bars behind head visible even through light sand
+  • King Soldier Bream / Nagel (Argyrops spinifer): deep body, very elongated 1st dorsal spine (often bent over), strongly forked tail
+
+DEEP BODY (>0.40) + SMALL INFERIOR MOUTH + NO VISIBLE TEETH → Siganidae (Rabbitfish/Safi):
+  • Streaked Rabbitfish (Siganus javus): deep body, small rabbit-like mouth, sharp venomous dorsal spines, handle with care
+  • White-spotted Rabbitfish / Safi (Siganus canaliculatus): similar, very common UAE inshore
+
+DEEP BODY (0.30–0.45) + BLUNT SNOUT + SMALL INFERIOR MOUTH → Haemulidae (Grunters):
+  • Silver Grunter / Shaoor (Pomadasys argenteus): most common UAE beach catch; deep oval body, blunt snout, small inferior mouth, large scales, XII dorsal spines, smooth preopercle, slightly forked tail — body depth ~0.38 SL
+  • Javelin Grunter (Pomadasys kaakan): similar but slightly more elongated, body depth ~0.32 SL
+
+ELONGATED-MODERATE (0.25–0.40) + LARGE TERMINAL MOUTH + LONG POINTED SNOUT → Lethrinidae (Emperors):
+  • Spangled Emperor / Sha'an (Lethrinus nebulosus): moderate depth, long conical snout, large mouth, cheek scaleless, deeply forked tail — very common UAE reef/beach species
+  • Pink Ear Emperor / Nageel (Lethrinus lentjan): similar, slightly deeper body, often pink flush on cheek
+  • Longface Emperor (Lethrinus olivaceus): most elongated emperor, very long snout, large mouth
+
+ELONGATED (0.20–0.35) + LARGE MOUTH + ROUNDED/TRUNCATE TAIL → Serranidae (Groupers):
+  • Brown-spotted Grouper / Hamour (Epinephelus coioides): moderately elongated, large head (>0.35 SL), wide terminal mouth, rounded caudal fin, 3 oblique dark bands on head — iconic UAE target species
+  • Greasy Grouper / Hammour Zafar (Epinephelus tauvina): similar, blunter head, brownish
+
+ELONGATED (0.18–0.30) + MODERATELY LARGE MOUTH + FORKED TAIL + LATERAL LINE CURVES DOWN → Carangidae (Jacks):
+  • Giant Trevally / Janad (Caranx ignobilis): robust fusiform, steep head profile, deeply forked tail, hard scutes on straight rear lateral line, large
+  • Queenfish (Scomberoides commersonnianus): more slender, multiple dark blotches along midline even through dirt, widely forked tail
+  • Golden Trevally (Gnathanodon speciosus): very distinctive — protractile rubbery lips with no teeth, golden/yellow when juvenile, deeper body than GT
+
+VERY ELONGATED (0.10–0.18) + TAPERED + LARGE MOUTH → Scomberomorus / Scombridae (Mackerels):
+  • Spanish Mackerel / Kanaad (Scomberomorus commerson): highly elongated (body depth ~0.12 SL), tapered snout, two dorsal fins, deeply forked tail, lateral line drops sharply at mid-body — prominent UAE sport fish
+  • Narrow-barred Mackerel: similar, smaller
+
+VERY ELONGATED (0.10–0.18) + BLUNT HEAD + THICK FLESHY LIPS → Mugilidae (Mullets):
+  • Diamond-scale Mullet (Liza vaigiensis): robust, blunt head, fleshy lips, adipose eyelid visible
+  • Gold-spot Mullet (Liza klunzingeri): UAE's most common mullet, similar shape
+
+ELONGATED + VERY LARGE MOUTH + TWO SEPARATED DORSAL FINS → Rachycentridae / Cobia:
+  • Cobia / Hamra (Rachycentron canadum): very elongated, broad depressed head, 7–9 short isolated dorsal spines before 2nd dorsal, dark lateral stripe, rounded caudal — unmistakable profile
+
+VERY ELONGATED (<0.10) + POINTED JAW + TWO WIDELY SEPARATED DORSALS → Sphyraenidae (Barracuda):
+  • Great Barracuda (Sphyraena barracuda): torpedo-shaped, two clearly separated dorsal fins, large terminal mouth with visible fang-like teeth, truncate tail
+
+ELONGATED + POINTED SNOUT + LARGE FANG-LIKE TEETH VISIBLE → Sciaenidae (Croakers):
+  • Tigertooth Croaker / Otolithes (Otolithes ruber): elongated, pointed snout, very large fang-like canine teeth clearly visible in open mouth — important UAE commercial fish
+
+DEPRESSED/FLAT HEAD & BODY → Platycephalidae (Flatheads):
+  • Indian Flathead / Oum el rooh (Platycephalus indicus): completely flat from above, ridged head, ambush predator — unmistakable silhouette
+
+ELONGATED + SNOUT FORMS BEAK + SMALL TEETH → Belonidae (Needlefish):
+  • Crocodile Needlefish (Tylosurus crocodilus): very elongated, both jaws form long beak, green bones — distinctive at a glance
+
+━━━ STEP 4 — RANK CANDIDATES ━━━
+List up to 5 candidates ranked by structural evidence quality.
+For each, state:
+  - Which structural features you could clearly observe
+  - Which body-proportion ratio you estimated and what value
+  - Why that points to this family, then this species
+  - Explicit confidence: lower confidence (0.30–0.55) when fish is heavily obscured; higher (0.70–0.92) only when multiple structural features are unambiguous
+
+Return ONLY valid JSON — no markdown, no text outside the JSON:
 {
   "status": "identified",
   "candidates": [
@@ -152,21 +219,31 @@ Return ONLY valid JSON — no markdown, no commentary:
         "id": "kebab-case-common-name",
         "name": "Common English Name",
         "scientificName": "Genus species",
-        "localName": "Arabic or local name if known, otherwise empty string",
-        "description": "One or two sentences about the species.",
+        "localName": "Arabic or local name if known, else empty string",
+        "description": "One or two sentences about the species in UAE waters.",
         "habitat": "Habitat description",
         "conservationStatus": "LC | NT | VU | EN | CR | Not Evaluated",
         "dangerLevel": "none | mild | moderate | dangerous",
         "edibility": "Excellent | Good | Fair | Poor | Unknown"
       },
-      "confidence_pct": 0.85,
-      "key_features": ["specific structural feature observed", "fin or mouth detail", "body shape detail"],
-      "reasoning": "State the snout shape, mouth size, body depth, and fin structure you observed, then explain which family and species that points to"
+      "confidence_pct": 0.82,
+      "key_features": [
+        "Body depth ~0.38 SL — moderately deep oval",
+        "Blunt rounded snout",
+        "Small inferior mouth, no visible teeth",
+        "Single dorsal fin, slightly notched",
+        "Slightly forked caudal fin, clean of mud"
+      ],
+      "reasoning": "Describe which body parts were clearly visible vs obscured, then walk through the proportion estimate, snout/mouth type, and fin details, and explain exactly which family and species that combination uniquely points to in UAE waters."
     }
   ]
 }
 
-Always return at least one candidate. Never let colour alone determine your top pick.`;
+RULES:
+• Never assign confidence > 0.90 unless snout, mouth, body proportions, AND caudal fin are all clearly visible and unambiguous.
+• If the fish is heavily sand-caked and only the silhouette is visible, cap confidence at 0.60 and note what was obscured.
+• Always return at least one candidate even if heavily obscured — note the uncertainty in reasoning.
+• Never let colour alone drive the top ranking.`;
 
   let res;
   try {
@@ -236,11 +313,11 @@ Always return at least one candidate. Never let colour alone determine your top 
  *   [{ species, confidence: number, rank: number, key_features?, lowConfidence?, unnamed_key? }]
  */
 export async function identifyFish(imageUri, location = null) {
-  // Resize to 800px wide (~150KB) before upload
+  // Resize to 1024px wide for better structural detail; higher quality preserves fin/snout edges
   const resized = await ImageManipulator.manipulateAsync(
     imageUri,
-    [{ resize: { width: 800 } }],
-    { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    [{ resize: { width: 1024 } }],
+    { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG, base64: true }
   );
 
   const payload = {

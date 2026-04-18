@@ -196,6 +196,10 @@ export default function CameraScreen({ navigation }) {
           <Corner position="bottomRight" />
         </View>
         <Text style={styles.viewfinderHint}>Centre the fish in the frame</Text>
+        <View style={styles.fieldTip}>
+          <Ionicons name="information-circle-outline" size={13} color="#8ab4d4" />
+          <Text style={styles.fieldTipText}>Lay flat · rinse sand/mud · shoot from above</Text>
+        </View>
       </View>
 
       {/* Model loading badge */}
@@ -277,6 +281,20 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.7)',
     fontSize: 13,
     marginTop: 16,
+  },
+  fieldTip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 8,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  fieldTipText: {
+    color: '#8ab4d4',
+    fontSize: 11,
   },
 
   modelBadge: {

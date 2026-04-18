@@ -113,6 +113,40 @@ export default function HomeScreen({ navigation }) {
           ))
         )}
 
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Advanced Tools</Text>
+        </View>
+
+        <View style={styles.toolsGrid}>
+          <TouchableOpacity
+            style={styles.toolCard}
+            onPress={() => navigation.navigate('Pollution')}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.toolIcon, { backgroundColor: '#12334a' }]}>
+              <Ionicons name="water-outline" size={22} color="#4fc3f7" />
+            </View>
+            <Text style={styles.toolTitle}>Pollution Monitor</Text>
+            <Text style={styles.toolText}>
+              Analyze water-surface photos for visible pollution indicators.
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.toolCard}
+            onPress={() => navigation.navigate('Molecular')}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.toolIcon, { backgroundColor: '#173828' }]}>
+              <Ionicons name="flask-outline" size={22} color="#00d4aa" />
+            </View>
+            <Text style={styles.toolTitle}>Molecular Markers</Text>
+            <Text style={styles.toolText}>
+              Run DNA-based identification using barcodes and marker panels.
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         {/* ── Tips ────────────────────────────────────── */}
         <View style={styles.tipsCard}>
           <Text style={styles.tipsTitle}>Tips for best results</Text>
@@ -254,6 +288,37 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { color: '#e8f4fd', fontSize: 17, fontWeight: '700' },
   seeAll: { color: '#00d4aa', fontSize: 14 },
+
+  toolsGrid: {
+    marginHorizontal: 20,
+    gap: 12,
+  },
+  toolCard: {
+    backgroundColor: '#0f2044',
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#142954',
+  },
+  toolIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  toolTitle: {
+    color: '#e8f4fd',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  toolText: {
+    color: '#8ab4d4',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 6,
+  },
 
   recentCard: {
     flexDirection: 'row',
