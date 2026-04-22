@@ -320,16 +320,31 @@ export async function identifyFish(imageUri, location = null) {
     { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG, base64: true }
   );
 
+  // Skip the server entirely when not logged in — go straight to direct Anthropic call
+  const token = await getToken();
+  if (!token) {
+    return identifyFishDirect(resized.base64, location);
+  }
+
   const payload = {
     imageBase64: resized.base64,
     mimeType: 'image/jpeg',
     ...(location ? { latitude: location.latitude, longitude: location.longitude } : {}),
   };
 
-  const res = await apiFetch('/api/identify', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  let res;
+  try {
+    res = await apiFetch('/api/identify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    // SESSION_EXPIRED or network error — fall back to direct Anthropic call
+    if (err.message === 'SESSION_EXPIRED' || err.message?.startsWith('No internet')) {
+      return identifyFishDirect(resized.base64, location);
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
