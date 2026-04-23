@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
 import CameraScreen from '../screens/CameraScreen';
@@ -58,6 +59,9 @@ function HomeStackNavigator() {
 }
 
 export default function AppNavigator() {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 62 + insets.bottom;
+
   return (
     <NavigationContainer
       theme={{
@@ -81,8 +85,8 @@ export default function AppNavigator() {
             backgroundColor: THEME.tabBar,
             borderTopColor: THEME.card,
             borderTopWidth: 1,
-            height: 62,
-            paddingBottom: 8,
+            height: tabBarHeight,
+            paddingBottom: 8 + insets.bottom,
             paddingTop: 6,
           },
           tabBarLabelStyle: {

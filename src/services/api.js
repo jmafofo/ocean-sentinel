@@ -326,39 +326,37 @@ export async function identifyFish(imageUri, location = null) {
     { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG, base64: true }
   );
 
-  // Skip the server entirely when not logged in — go straight to direct Anthropic call
-  const token = await getToken();
-  if (!token) {
-    return identifyFishDirect(resized.base64, location);
-  }
-
   const payload = {
     imageBase64: resized.base64,
     mimeType: 'image/jpeg',
     ...(location ? { latitude: location.latitude, longitude: location.longitude } : {}),
   };
 
+  // Always go through the server — /api/identify accepts unauthenticated requests.
+  // apiFetch attaches the Bearer token if present (for catch logging), omits it if not.
   let res;
   try {
-    res = await apiFetch('/api/identify', {
+    res = await fetch(`${API_BASE}/api/identify`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Attach token only if available — server still processes without it
+        ...(await getToken().then(t => t ? { Authorization: `Bearer ${t}` } : {})),
+      },
       body: JSON.stringify(payload),
     });
-  } catch (err) {
-    // SESSION_EXPIRED or network error — fall back to direct Anthropic call
-    if (err.message === 'SESSION_EXPIRED' || err.message?.startsWith('No internet')) {
-      return identifyFishDirect(resized.base64, location);
-    }
-    throw err;
+  } catch (networkErr) {
+    console.warn('[API] identifyFish network error:', networkErr.message);
+    throw new Error('No internet connection. Please check your network and try again.');
   }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = err.error ?? `Identification failed (HTTP ${res.status})`;
-    console.warn(`[API] identifyFish server failed — HTTP ${res.status}:`, msg, '— trying direct fallback');
+    console.warn(`[API] identifyFish server failed — HTTP ${res.status}:`, msg);
 
-    // Fall back to direct Anthropic call on gateway/server errors
-    if (res.status === 502 || res.status === 503 || res.status === 504 || res.status >= 500) {
+    // Fall back to direct Anthropic call only on server/gateway errors
+    if (res.status >= 500) {
       return identifyFishDirect(resized.base64, location);
     }
 
