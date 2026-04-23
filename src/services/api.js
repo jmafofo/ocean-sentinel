@@ -245,13 +245,18 @@ RULES:
 • Always return at least one candidate even if heavily obscured — note the uncertainty in reasoning.
 • Never let colour alone drive the top ranking.`;
 
+  // Guard: key must be present — if empty the build didn't embed env vars correctly
+  if (!ANTHROPIC_API_KEY) {
+    throw new Error('API key not configured. Please contact support.');
+  }
+
   let res;
   try {
     res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type':      'application/json',
-        'x-api-key':         ANTHROPIC_API_KEY,
+        'x-api-key':         ANTHROPIC_API_KEY.trim(),
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -273,8 +278,9 @@ RULES:
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
+    const detail = errBody?.error?.message ?? errBody?.error?.type ?? '';
     console.warn(`[API] Direct Anthropic call failed — HTTP ${res.status}:`, errBody);
-    throw new Error(`Identification service unavailable (HTTP ${res.status}). Please try again.`);
+    throw new Error(`Identification service unavailable (HTTP ${res.status}${detail ? ': ' + detail : ''}). Please try again.`);
   }
 
   const data = await res.json();

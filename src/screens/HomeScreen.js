@@ -13,6 +13,7 @@ import {
 } from '../services/database';
 import { isModelLoaded } from '../services/fishIdentifier';
 import fishSpecies from '../data/fishSpecies.json';
+import AdBanner from '../components/AdBanner';
 
 export default function HomeScreen({ navigation }) {
   const [stats, setStats] = useState({ total: 0, species: 0 });
@@ -160,6 +161,7 @@ export default function HomeScreen({ navigation }) {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+      <AdBanner />
     </SafeAreaView>
   );
 }

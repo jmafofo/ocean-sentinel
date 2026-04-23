@@ -11,6 +11,7 @@ import FishCard from '../components/FishCard';
 import ConfidenceBar from '../components/ConfidenceBar';
 import { getConfidenceColor } from '../services/fishIdentifier';
 import { saveSighting } from '../services/database';
+import AdBanner from '../components/AdBanner';
 
 export default function IdentificationScreen({ route, navigation }) {
   const { results, imageUri } = route.params ?? {};
@@ -219,6 +220,7 @@ export default function IdentificationScreen({ route, navigation }) {
           <View style={{ height: 30 }} />
         </Animated.View>
       </ScrollView>
+      <AdBanner />
     </SafeAreaView>
   );
 }
