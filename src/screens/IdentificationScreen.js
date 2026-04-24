@@ -212,6 +212,26 @@ export default function IdentificationScreen({ route, navigation }) {
             </View>
           )}
 
+          {/* ── Log to UAE Angler (creator sync) ─────── */}
+          <TouchableOpacity
+            style={styles.logSyncBtn}
+            onPress={() => navigation.navigate('LogCatch', {
+              topResult,
+              location,
+              imageUri,
+            })}
+            activeOpacity={0.85}
+          >
+            <View style={styles.logSyncIcon}>
+              <Ionicons name="cloud-upload-outline" size={18} color="#00d4aa" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.logSyncTitle}>Log to UAE Angler</Text>
+              <Text style={styles.logSyncSub}>Add weight, bait, video link (YouTube/TikTok/Instagram/Facebook) · sync to your profile</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#2a4a6a" />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.newScanBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="camera-outline" size={18} color="#e8f4fd" />
             <Text style={styles.newScanText}>Scan Another Fish</Text>
@@ -391,6 +411,29 @@ const styles = StyleSheet.create({
     borderColor: '#00d4aa44',
   },
   savedText: { color: '#00d4aa', fontSize: 15, fontWeight: '600' },
+
+  logSyncBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0d1f3c',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#00d4aa33',
+  },
+  logSyncIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#0a2030',
+    borderWidth: 1,
+    borderColor: '#00d4aa44',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logSyncTitle: { color: '#ddeeff', fontSize: 14, fontWeight: '700' },
+  logSyncSub:   { color: '#6a9fc0', fontSize: 11, marginTop: 2 },
 
   newScanBtn: {
     flexDirection: 'row',

@@ -13,6 +13,7 @@ import HistoryScreen from '../screens/HistoryScreen';
 import MapScreen from '../screens/MapScreen';
 import PollutionScreen from '../screens/PollutionScreen';
 import MolecularMarkerScreen from '../screens/MolecularMarkerScreen';
+import LogCatchScreen from '../screens/LogCatchScreen';
 
 const Tab = createBottomTabNavigator();
 const CameraStack = createNativeStackNavigator();
@@ -38,6 +39,7 @@ function CameraStackNavigator() {
     >
       <CameraStack.Screen name="CameraCapture" component={CameraScreen} />
       <CameraStack.Screen name="Identification" component={IdentificationScreen} />
+      <CameraStack.Screen name="LogCatch" component={LogCatchScreen} />
     </CameraStack.Navigator>
   );
 }
@@ -52,6 +54,7 @@ function HomeStackNavigator() {
     >
       <HomeStack.Screen name="HomeMain" component={HomeScreen} />
       <HomeStack.Screen name="Identification" component={IdentificationScreen} />
+      <HomeStack.Screen name="LogCatch" component={LogCatchScreen} />
       <HomeStack.Screen name="Pollution" component={PollutionScreen} />
       <HomeStack.Screen name="Molecular" component={MolecularMarkerScreen} />
     </HomeStack.Navigator>

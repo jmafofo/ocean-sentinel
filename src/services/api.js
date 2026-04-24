@@ -492,7 +492,8 @@ function normaliseSpecies(s) {
 export async function submitCatch(catchData) {
   const res = await apiFetch('/api/catches', {
     method: 'POST',
-    body: JSON.stringify({ ...catchData, source: 'app' }),
+    // Preserve caller-supplied source (e.g. 'ocean_sentinel'), fall back to 'app'
+    body: JSON.stringify({ source: 'app', ...catchData }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

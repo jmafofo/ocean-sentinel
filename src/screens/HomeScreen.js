@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
-  StatusBar, ActivityIndicator, RefreshControl,
+  StatusBar, ActivityIndicator, RefreshControl, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,105 @@ import { isModelLoaded } from '../services/fishIdentifier';
 import fishSpecies from '../data/fishSpecies.json';
 import AdBanner from '../components/AdBanner';
 
+// ── Palette ───────────────────────────────────────────────────────────────────
+const C = {
+  bg:       '#050e1f',
+  surface:  '#0a1628',
+  card:     '#0d1f3c',
+  border:   '#12305a',
+  accent:   '#00d4aa',
+  blue:     '#4fc3f7',
+  amber:    '#ffb74d',
+  text:     '#ddeeff',
+  sub:      '#6a9fc0',
+  dim:      '#2a4a6a',
+  scanRing: '#00d4aa',
+};
+
+// ── Corner bracket overlay ────────────────────────────────────────────────────
+function Brackets({ size = 14, color = C.accent, thickness = 2 }) {
+  const s = { position: 'absolute', width: size, height: size };
+  const bar = { backgroundColor: color };
+  return (
+    <>
+      {/* top-left */}
+      <View style={[s, { top: 0, left: 0 }]}>
+        <View style={[bar, { height: thickness, width: size }]} />
+        <View style={[bar, { width: thickness, height: size - thickness, marginTop: -thickness }]} />
+      </View>
+      {/* top-right */}
+      <View style={[s, { top: 0, right: 0 }]}>
+        <View style={[bar, { height: thickness, width: size }]} />
+        <View style={[bar, { width: thickness, height: size - thickness, marginTop: -thickness, alignSelf: 'flex-end' }]} />
+      </View>
+      {/* bottom-left */}
+      <View style={[s, { bottom: 0, left: 0 }]}>
+        <View style={[bar, { width: thickness, height: size - thickness }]} />
+        <View style={[bar, { height: thickness, width: size, marginTop: -thickness }]} />
+      </View>
+      {/* bottom-right */}
+      <View style={[s, { bottom: 0, right: 0 }]}>
+        <View style={[bar, { width: thickness, height: size - thickness, alignSelf: 'flex-end' }]} />
+        <View style={[bar, { height: thickness, width: size, marginTop: -thickness }]} />
+      </View>
+    </>
+  );
+}
+
+// ── Animated pulsing sonar ring ───────────────────────────────────────────────
+function ScanPulse() {
+  const ring1 = useRef(new Animated.Value(0)).current;
+  const ring2 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const pulse = (val, delay) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.parallel([
+            Animated.timing(val, { toValue: 1, duration: 1800, useNativeDriver: true }),
+          ]),
+          Animated.timing(val, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ]),
+      );
+    pulse(ring1, 0).start();
+    pulse(ring2, 900).start();
+  }, []);
+
+  const ringStyle = (val) => ({
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 1.5,
+    borderColor: C.scanRing,
+    opacity: val.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.7, 0.3, 0] }),
+    transform: [{ scale: val.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] }) }],
+  });
+
+  return (
+    <>
+      <Animated.View style={ringStyle(ring1)} />
+      <Animated.View style={ringStyle(ring2)} />
+    </>
+  );
+}
+
+// ── Pulsing status dot ────────────────────────────────────────────────────────
+function PulseDot({ color }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.2, duration: 800, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ]),
+    ).start();
+  }, []);
+  return <Animated.View style={[styles.pulseDot, { backgroundColor: color, opacity }]} />;
+}
+
+// ── Main screen ───────────────────────────────────────────────────────────────
 export default function HomeScreen({ navigation }) {
   const [stats, setStats] = useState({ total: 0, species: 0 });
   const [recents, setRecents] = useState([]);
@@ -38,342 +137,527 @@ export default function HomeScreen({ navigation }) {
     }
   }, []);
 
-  // Reload every time the tab is focused
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
+  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
+  const onRefresh = () => { setRefreshing(true); loadData(); };
+  const aiReady = isModelLoaded();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a1628" />
+      <StatusBar barStyle="light-content" backgroundColor={C.bg} />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00d4aa" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.accent} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ─────────────────────────────────── */}
+
+        {/* ── HUD Header ───────────────────────────────────────────────── */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Ocean Sentinel</Text>
-            <Text style={styles.subtitle}>Fish Identification & Tracking</Text>
+            <Text style={styles.eyebrow}>// OCEAN SENTINEL</Text>
+            <Text style={styles.title}>FIELD<Text style={{ color: C.accent }}> SCANNER</Text></Text>
           </View>
-          <View style={styles.aiStatus}>
-            <View style={[styles.aiDot, { backgroundColor: isModelLoaded() ? '#00d4aa' : '#ffb74d' }]} />
-            <Text style={styles.aiLabel}>{isModelLoaded() ? 'AI Ready' : 'AI Loading'}</Text>
+          <View style={styles.statusPill}>
+            <PulseDot color={aiReady ? C.accent : C.amber} />
+            <Text style={[styles.statusText, { color: aiReady ? C.accent : C.amber }]}>
+              {aiReady ? 'AI READY' : 'LOADING'}
+            </Text>
           </View>
         </View>
 
-        {/* ── Scan CTA ────────────────────────────────── */}
+        {/* ── Thin HUD divider ─────────────────────────────────────────── */}
+        <View style={styles.hudBar}>
+          <View style={styles.hudLine} />
+          <Text style={styles.hudLabel}>UAE WATERS ◆ ARABIAN GULF</Text>
+          <View style={styles.hudLine} />
+        </View>
+
+        {/* ── Scan CTA ─────────────────────────────────────────────────── */}
         <TouchableOpacity
           style={styles.scanCta}
           onPress={() => navigation.navigate('Camera')}
-          activeOpacity={0.85}
+          activeOpacity={0.88}
         >
-          <View style={styles.scanCtaInner}>
-            <Ionicons name="camera" size={36} color="#0a1628" />
-            <View style={{ marginLeft: 16 }}>
-              <Text style={styles.scanTitle}>Identify a Fish</Text>
-              <Text style={styles.scanSub}>Point camera at a fish — works offline</Text>
+          <Brackets size={18} color={C.accent} thickness={2} />
+
+          {/* sonar rings + icon */}
+          <View style={styles.scanOrb}>
+            <ScanPulse />
+            <View style={styles.scanOrbInner}>
+              <Ionicons name="scan" size={32} color={C.bg} />
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={22} color="#0a1628" style={{ opacity: 0.6 }} />
+
+          <View style={styles.scanText}>
+            <Text style={styles.scanTitle}>SCAN FISH</Text>
+            <Text style={styles.scanSub}>AI IDENTIFICATION  ◆  OFFLINE CAPABLE</Text>
+          </View>
+
+          <View style={styles.scanArrow}>
+            <Text style={styles.scanChevron}>›</Text>
+          </View>
         </TouchableOpacity>
 
-        {/* ── Stats row ───────────────────────────────── */}
-        <View style={styles.statsRow}>
-          <StatCard icon="fish-outline" value={stats.total} label="Sightings" color="#00d4aa" />
-          <StatCard icon="layers-outline" value={stats.species} label="Species" color="#4fc3f7" />
-          <StatCard icon="library-outline" value={fishSpecies.length} label="In Database" color="#ffb74d" />
+        {/* ── Field Data ───────────────────────────────────────────────── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>// FIELD_DATA</Text>
+          <View style={styles.sectionLine} />
         </View>
 
-        {/* ── Recent Sightings ────────────────────────── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Sightings</Text>
+        <View style={styles.statsRow}>
+          <DataCard value={stats.total}         label="SPECIMENS"  color={C.accent} icon="fish-outline" />
+          <DataCard value={stats.species}        label="SPECIES ID" color={C.blue}   icon="layers-outline" />
+          <DataCard value={fishSpecies.length}   label="DATABASE"   color={C.amber}  icon="server-outline" />
+        </View>
+
+        {/* ── Recent Captures ──────────────────────────────────────────── */}
+        <View style={[styles.sectionHeader, { marginTop: 28 }]}>
+          <Text style={styles.sectionLabel}>// RECENT_CAPTURES</Text>
+          <View style={styles.sectionLine} />
           {recents.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('History')}>
-              <Text style={styles.seeAll}>See all</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('History')} style={{ marginLeft: 10 }}>
+              <Text style={styles.seeAll}>ALL ›</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {loading ? (
-          <ActivityIndicator color="#00d4aa" style={{ marginVertical: 24 }} />
+          <ActivityIndicator color={C.accent} style={{ marginVertical: 24 }} />
         ) : recents.length === 0 ? (
           <EmptyState onPress={() => navigation.navigate('Camera')} />
         ) : (
-          recents.map(sighting => (
-            <RecentCard key={sighting.id} sighting={sighting} />
-          ))
+          recents.map(s => <CaptureCard key={s.id} sighting={s} />)
         )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Advanced Tools</Text>
+        {/* ── Advanced Tools ───────────────────────────────────────────── */}
+        <View style={[styles.sectionHeader, { marginTop: 28 }]}>
+          <Text style={styles.sectionLabel}>// ADVANCED_TOOLS</Text>
+          <View style={styles.sectionLine} />
         </View>
 
         <View style={styles.toolsGrid}>
-          <TouchableOpacity
-            style={styles.toolCard}
+          <ToolCard
+            title="POLLUTION MONITOR"
+            sub="Analyze surface water for visible contamination indicators"
+            icon="water-outline"
+            iconBg="#0a2540"
+            iconColor={C.blue}
+            accentColor={C.blue}
             onPress={() => navigation.navigate('Pollution')}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.toolIcon, { backgroundColor: '#12334a' }]}>
-              <Ionicons name="water-outline" size={22} color="#4fc3f7" />
-            </View>
-            <Text style={styles.toolTitle}>Pollution Monitor</Text>
-            <Text style={styles.toolText}>
-              Analyze water-surface photos for visible pollution indicators.
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.toolCard}
+          />
+          <ToolCard
+            title="MOLECULAR MARKERS"
+            sub="DNA barcode identification using marker panel analysis"
+            icon="flask-outline"
+            iconBg="#082518"
+            iconColor={C.accent}
+            accentColor={C.accent}
             onPress={() => navigation.navigate('Molecular')}
-            activeOpacity={0.85}
-          >
-            <View style={[styles.toolIcon, { backgroundColor: '#173828' }]}>
-              <Ionicons name="flask-outline" size={22} color="#00d4aa" />
-            </View>
-            <Text style={styles.toolTitle}>Molecular Markers</Text>
-            <Text style={styles.toolText}>
-              Run DNA-based identification using barcodes and marker panels.
-            </Text>
-          </TouchableOpacity>
+          />
         </View>
 
-        {/* ── Tips ────────────────────────────────────── */}
-        <View style={styles.tipsCard}>
-          <Text style={styles.tipsTitle}>Tips for best results</Text>
-          {TIPS.map((tip, i) => (
-            <View key={i} style={styles.tipRow}>
-              <Text style={styles.tipEmoji}>{tip.emoji}</Text>
-              <Text style={styles.tipText}>{tip.text}</Text>
+        {/* ── Field Protocol ───────────────────────────────────────────── */}
+        <View style={styles.protocolCard}>
+          <Brackets size={14} color={C.dim} thickness={1.5} />
+          <Text style={styles.protocolTitle}>◆ FIELD PROTOCOL</Text>
+          {PROTOCOL.map((p, i) => (
+            <View key={i} style={styles.protocolRow}>
+              <Text style={styles.protocolNum}>{String(i + 1).padStart(2, '0')}</Text>
+              <View style={styles.protocolDivider} />
+              <Text style={styles.protocolText}>{p}</Text>
             </View>
           ))}
         </View>
 
-        <View style={{ height: 20 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
       <AdBanner />
     </SafeAreaView>
   );
 }
 
-function StatCard({ icon, value, label, color }) {
+// ── DataCard ──────────────────────────────────────────────────────────────────
+function DataCard({ value, label, color, icon }) {
   return (
-    <View style={styles.statCard}>
-      <Ionicons name={icon} size={22} color={color} />
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={[styles.dataCard, { borderTopColor: color }]}>
+      <Ionicons name={icon} size={16} color={color} style={{ marginBottom: 6 }} />
+      <Text style={[styles.dataValue, { color }]}>{value}</Text>
+      <Text style={styles.dataLabel}>{label}</Text>
     </View>
   );
 }
 
-function RecentCard({ sighting }) {
+// ── CaptureCard ───────────────────────────────────────────────────────────────
+function CaptureCard({ sighting }) {
   const species = fishSpecies.find(f => f.id === sighting.speciesId);
+  const conf = Math.round((sighting.confidence ?? 0) * 100);
+  const confColor = conf >= 80 ? C.accent : conf >= 50 ? C.amber : '#ef5350';
+
   return (
-    <View style={styles.recentCard}>
-      <View style={styles.recentIcon}>
-        <Text style={{ fontSize: 20 }}>🐟</Text>
+    <View style={styles.captureCard}>
+      {/* left confidence bar */}
+      <View style={[styles.captureBar, { backgroundColor: confColor }]} />
+
+      <View style={styles.captureIconWrap}>
+        <Ionicons name="fish" size={18} color={confColor} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.recentName}>{sighting.speciesName}</Text>
-        {species && <Text style={styles.recentSci}>{species.scientificName}</Text>}
-        <View style={styles.recentMeta}>
-          <Ionicons name="time-outline" size={11} color="#4a7fa8" />
-          <Text style={styles.recentTime}>{formatTimestamp(sighting.timestamp)}</Text>
+
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={styles.captureName}>{sighting.speciesName}</Text>
+        {species && <Text style={styles.captureSci}>{species.scientificName}</Text>}
+        <View style={styles.captureMeta}>
+          <Ionicons name="time-outline" size={10} color={C.sub} />
+          <Text style={styles.captureMetaText}> {formatTimestamp(sighting.timestamp)}</Text>
           {sighting.latitude != null && (
             <>
-              <Ionicons name="location-outline" size={11} color="#4a7fa8" style={{ marginLeft: 8 }} />
-              <Text style={styles.recentTime}>
-                {sighting.latitude.toFixed(3)}, {sighting.longitude.toFixed(3)}
+              <Text style={[styles.captureMetaText, { color: C.dim, marginHorizontal: 4 }]}>◆</Text>
+              <Ionicons name="location-outline" size={10} color={C.sub} />
+              <Text style={styles.captureMetaText}>
+                {' '}{sighting.latitude.toFixed(3)}°N {sighting.longitude.toFixed(3)}°E
               </Text>
             </>
           )}
         </View>
       </View>
-      <Text style={styles.recentConf}>{Math.round(sighting.confidence * 100)}%</Text>
+
+      <View style={[styles.confBadge, { borderColor: confColor }]}>
+        <Text style={[styles.confValue, { color: confColor }]}>{conf}</Text>
+        <Text style={styles.confPct}>%</Text>
+      </View>
     </View>
   );
 }
 
+// ── ToolCard ──────────────────────────────────────────────────────────────────
+function ToolCard({ title, sub, icon, iconBg, iconColor, accentColor, onPress }) {
+  return (
+    <TouchableOpacity style={[styles.toolCard, { borderLeftColor: accentColor }]} onPress={onPress} activeOpacity={0.85}>
+      <View style={[styles.toolIcon, { backgroundColor: iconBg, borderColor: accentColor + '55' }]}>
+        <Ionicons name={icon} size={22} color={iconColor} />
+      </View>
+      <View style={{ flex: 1, marginLeft: 14 }}>
+        <Text style={styles.toolTitle}>{title}</Text>
+        <Text style={styles.toolSub}>{sub}</Text>
+      </View>
+      <Text style={[styles.toolArrow, { color: accentColor }]}>›</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ── EmptyState ────────────────────────────────────────────────────────────────
 function EmptyState({ onPress }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyEmoji}>🌊</Text>
-      <Text style={styles.emptyTitle}>No sightings yet</Text>
-      <Text style={styles.emptyText}>Tap the button above or use the Camera tab to identify your first fish.</Text>
+      <View style={styles.emptyOrb}>
+        <Ionicons name="scan-outline" size={36} color={C.dim} />
+      </View>
+      <Text style={styles.emptyTitle}>NO CAPTURES LOGGED</Text>
+      <Text style={styles.emptyText}>Scan your first fish to begin building your field record.</Text>
       <TouchableOpacity style={styles.emptyBtn} onPress={onPress}>
-        <Ionicons name="camera-outline" size={16} color="#0a1628" style={{ marginRight: 6 }} />
-        <Text style={styles.emptyBtnText}>Start Scanning</Text>
+        <Ionicons name="camera-outline" size={15} color={C.bg} style={{ marginRight: 6 }} />
+        <Text style={styles.emptyBtnText}>INITIATE SCAN</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-const TIPS = [
-  { emoji: '☀️', text: 'Good lighting improves accuracy — natural light works best' },
-  { emoji: '📸', text: 'Capture the whole fish in frame, including fins and tail' },
-  { emoji: '🔍', text: 'For small fish, get as close as possible and keep steady' },
-  { emoji: '📶', text: 'Once the AI model downloads, no internet required' },
+// ── Protocol steps ────────────────────────────────────────────────────────────
+const PROTOCOL = [
+  'Natural light gives best accuracy — avoid flash in dark conditions',
+  'Frame the entire fish including fins and caudal tail',
+  'For small specimens, approach within 30 cm and hold steady',
+  'App operates fully offline once AI model is cached',
 ];
 
+// ── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0a1628' },
-  scroll: { flex: 1 },
+  safe:    { flex: 1, backgroundColor: C.bg },
+  scroll:  { flex: 1 },
   content: { paddingBottom: 24 },
 
+  // header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
-  greeting: { color: '#e8f4fd', fontSize: 24, fontWeight: '800' },
-  subtitle: { color: '#8ab4d4', fontSize: 13, marginTop: 2 },
-  aiStatus: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  aiDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  aiLabel: { color: '#8ab4d4', fontSize: 12 },
+  eyebrow: {
+    color: C.sub,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  title: {
+    color: C.text,
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.card,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: C.border,
+    marginTop: 4,
+  },
+  pulseDot: { width: 7, height: 7, borderRadius: 4, marginRight: 6 },
+  statusText: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5 },
 
+  // HUD divider
+  hudBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    gap: 8,
+  },
+  hudLine: { flex: 1, height: 1, backgroundColor: C.border },
+  hudLabel: { color: C.dim, fontSize: 9, letterSpacing: 2, fontWeight: '600' },
+
+  // scan CTA
   scanCta: {
     marginHorizontal: 20,
-    backgroundColor: '#00d4aa',
-    borderRadius: 16,
+    backgroundColor: C.card,
+    borderRadius: 18,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#00d4aa',
+    borderWidth: 1,
+    borderColor: C.accent + '55',
+    shadowColor: C.accent,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  scanOrb: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanOrbInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: C.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
     shadowRadius: 12,
     elevation: 8,
   },
-  scanCtaInner: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  scanTitle: { color: '#0a1628', fontSize: 18, fontWeight: '800' },
-  scanSub: { color: '#0a3020', fontSize: 12, marginTop: 2 },
-
-  statsRow: {
-    flexDirection: 'row',
-    marginHorizontal: 20,
-    marginTop: 20,
-    gap: 10,
+  scanText: { flex: 1, marginLeft: 16 },
+  scanTitle: {
+    color: C.text,
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
-  statCard: {
+  scanSub: {
+    color: C.sub,
+    fontSize: 10,
+    letterSpacing: 1.2,
+    marginTop: 4,
+  },
+  scanArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: C.accent + '22',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.accent + '44',
+  },
+  scanChevron: { color: C.accent, fontSize: 20, fontWeight: '700', lineHeight: 24 },
+
+  // section header
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 0,
+    marginBottom: 12,
+    gap: 8,
+  },
+  sectionLabel: {
+    color: C.accent,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  sectionLine: { flex: 1, height: 1, backgroundColor: C.border },
+  seeAll: { color: C.accent, fontSize: 10, fontWeight: '700', letterSpacing: 1.5 },
+
+  // data cards
+  statsRow: { flexDirection: 'row', marginHorizontal: 20, gap: 10 },
+  dataCard: {
     flex: 1,
-    backgroundColor: '#0f2044',
+    backgroundColor: C.card,
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#142954',
+    borderColor: C.border,
+    borderTopWidth: 2,
   },
-  statValue: { fontSize: 22, fontWeight: '800', marginTop: 6 },
-  statLabel: { color: '#8ab4d4', fontSize: 11, marginTop: 3 },
+  dataValue: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+  dataLabel: { color: C.sub, fontSize: 9, fontWeight: '700', letterSpacing: 1.5, marginTop: 4 },
 
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 24,
-    marginBottom: 10,
-  },
-  sectionTitle: { color: '#e8f4fd', fontSize: 17, fontWeight: '700' },
-  seeAll: { color: '#00d4aa', fontSize: 14 },
-
-  toolsGrid: {
-    marginHorizontal: 20,
-    gap: 12,
-  },
-  toolCard: {
-    backgroundColor: '#0f2044',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#142954',
-  },
-  toolIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  toolTitle: {
-    color: '#e8f4fd',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  toolText: {
-    color: '#8ab4d4',
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 6,
-  },
-
-  recentCard: {
+  // capture card
+  captureCard: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 8,
-    backgroundColor: '#0f2044',
+    backgroundColor: C.card,
     borderRadius: 12,
-    padding: 12,
+    paddingVertical: 12,
+    paddingRight: 14,
     borderWidth: 1,
-    borderColor: '#142954',
+    borderColor: C.border,
+    overflow: 'hidden',
   },
-  recentIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#142954',
-    justifyContent: 'center',
+  captureBar: { width: 3, alignSelf: 'stretch', borderRadius: 3, marginRight: 12 },
+  captureIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
     alignItems: 'center',
-    marginRight: 12,
+    justifyContent: 'center',
   },
-  recentName: { color: '#e8f4fd', fontSize: 15, fontWeight: '600' },
-  recentSci: { color: '#8ab4d4', fontSize: 11, fontStyle: 'italic', marginTop: 1 },
-  recentMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  recentTime: { color: '#4a7fa8', fontSize: 11, marginLeft: 3 },
-  recentConf: { color: '#00d4aa', fontSize: 15, fontWeight: '700', marginLeft: 8 },
+  captureName: { color: C.text, fontSize: 14, fontWeight: '700' },
+  captureSci:  { color: C.sub, fontSize: 10, fontStyle: 'italic', marginTop: 1 },
+  captureMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  captureMetaText: { color: C.sub, fontSize: 10 },
+  confBadge: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    marginLeft: 8,
+  },
+  confValue: { fontSize: 16, fontWeight: '900', lineHeight: 18 },
+  confPct:   { color: C.sub, fontSize: 9, fontWeight: '700', lineHeight: 16, marginBottom: 1 },
 
-  empty: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 40 },
-  emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { color: '#e8f4fd', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  emptyText: { color: '#8ab4d4', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  // tool cards
+  toolsGrid: { marginHorizontal: 20, gap: 10 },
+  toolCard: {
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: C.border,
+    borderLeftWidth: 3,
+  },
+  toolIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  toolTitle: { color: C.text, fontSize: 12, fontWeight: '800', letterSpacing: 1.2 },
+  toolSub:   { color: C.sub, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  toolArrow: { fontSize: 22, fontWeight: '700', marginLeft: 8 },
+
+  // protocol
+  protocolCard: {
+    marginHorizontal: 20,
+    marginTop: 24,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  protocolTitle: {
+    color: C.sub,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: 14,
+  },
+  protocolRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  protocolNum: {
+    color: C.accent,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    width: 22,
+    marginTop: 1,
+  },
+  protocolDivider: {
+    width: 1,
+    backgroundColor: C.border,
+    marginHorizontal: 10,
+    alignSelf: 'stretch',
+  },
+  protocolText: {
+    color: C.sub,
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+  },
+
+  // empty state
+  empty: { alignItems: 'center', paddingVertical: 36, paddingHorizontal: 40 },
+  emptyOrb: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    color: C.text,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  emptyText: { color: C.sub, fontSize: 13, textAlign: 'center', lineHeight: 19 },
   emptyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#00d4aa',
+    backgroundColor: C.accent,
     borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
     marginTop: 20,
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  emptyBtnText: { color: '#0a1628', fontSize: 15, fontWeight: '700' },
-
-  tipsCard: {
-    marginHorizontal: 20,
-    marginTop: 24,
-    backgroundColor: '#0f2044',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#142954',
-  },
-  tipsTitle: { color: '#e8f4fd', fontSize: 14, fontWeight: '700', marginBottom: 12 },
-  tipRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
-  tipEmoji: { fontSize: 16, marginRight: 10 },
-  tipText: { color: '#8ab4d4', fontSize: 13, lineHeight: 19, flex: 1 },
+  emptyBtnText: { color: C.bg, fontSize: 12, fontWeight: '800', letterSpacing: 1.5 },
 });
