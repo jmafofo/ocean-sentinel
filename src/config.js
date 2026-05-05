@@ -15,5 +15,10 @@ export const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON ?? '';
 export const SPECIES_CACHE_KEY     = 'uae_species_cache_v1';
 export const SPECIES_CACHE_VERSION = '2024-moccae-v1';
 
+/**
+ * Anthropic key — only used by the Pollution Monitor (client-side).
+ * Fish identification is routed exclusively through uaeangler.com so
+ * this key never needs to be exposed for ID calls.
+ */
 export const ANTHROPIC_API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY ?? '';
 export const ANTHROPIC_MODEL   = 'claude-sonnet-4-6';

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
   Image, Alert, ActivityIndicator,
@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 
 import { analyzePollution, getPollutionSeverityColor } from '../services/pollutionDetector';
-import { getMarineWeather, assessWeatherSuitability } from '../services/weatherService';
+import { getMarineWeather } from '../services/weatherService';
 
 const THEME = {
   background: '#0a1628',

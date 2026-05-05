@@ -14,6 +14,7 @@ import MapScreen from '../screens/MapScreen';
 import PollutionScreen from '../screens/PollutionScreen';
 import MolecularMarkerScreen from '../screens/MolecularMarkerScreen';
 import LogCatchScreen from '../screens/LogCatchScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const CameraStack = createNativeStackNavigator();
@@ -44,7 +45,7 @@ function CameraStackNavigator() {
   );
 }
 
-function HomeStackNavigator() {
+function HomeStackNavigator({ onLogout }) {
   return (
     <HomeStack.Navigator
       screenOptions={{
@@ -61,7 +62,11 @@ function HomeStackNavigator() {
   );
 }
 
-export default function AppNavigator() {
+function ProfileTabScreen({ onLogout }) {
+  return <ProfileScreen route={{ params: { onLogout } }} navigation={{ goBack: () => {} }} />;
+}
+
+export default function AppNavigator({ onLogout }) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = 62 + insets.bottom;
 
@@ -102,6 +107,7 @@ export default function AppNavigator() {
               Camera: focused ? 'camera' : 'camera-outline',
               History: focused ? 'list' : 'list-outline',
               Map: focused ? 'map' : 'map-outline',
+              Profile: focused ? 'person' : 'person-outline',
             };
             return (
               <View style={focused ? styles.activeTab : null}>
@@ -111,7 +117,9 @@ export default function AppNavigator() {
           },
         })}
       >
-        <Tab.Screen name="Home" component={HomeStackNavigator} />
+        <Tab.Screen name="Home">
+          {() => <HomeStackNavigator onLogout={onLogout} />}
+        </Tab.Screen>
         <Tab.Screen
           name="Camera"
           component={CameraStackNavigator}
@@ -126,6 +134,9 @@ export default function AppNavigator() {
         />
         <Tab.Screen name="History" component={HistoryScreen} />
         <Tab.Screen name="Map" component={MapScreen} />
+        <Tab.Screen name="Profile">
+          {() => <ProfileTabScreen onLogout={onLogout} />}
+        </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
   );

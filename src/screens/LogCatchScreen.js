@@ -119,7 +119,7 @@ export default function LogCatchScreen({ route, navigation }) {
     if (!loggedIn) {
       Alert.alert('Sign In Required', 'Log in to your UAE Angler account to sync catches.', [
         { text: 'Cancel' },
-        { text: 'Sign In', onPress: () => navigation.navigate('Profile') },
+        { text: 'Sign In', onPress: () => navigation.navigate('Home', { screen: 'Profile' }) },
       ]);
       return;
     }
@@ -253,7 +253,7 @@ export default function LogCatchScreen({ route, navigation }) {
           {!loggedIn && (
             <TouchableOpacity
               style={styles.authBanner}
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate('Home', { screen: 'Profile' })}
             >
               <Ionicons name="person-circle-outline" size={18} color={C.amber} />
               <Text style={styles.authBannerText}>Sign in to your UAE Angler account to sync catches</Text>

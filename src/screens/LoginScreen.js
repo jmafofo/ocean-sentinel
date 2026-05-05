@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { login, signup, resendConfirmationEmail } from '../services/auth';
+import { login, signup, resendConfirmationEmail, loginWithGoogle } from '../services/auth';
 
 export default function LoginScreen({ onLogin }) {
   const [mode, setMode]                   = useState('signin'); // 'signin' | 'signup' | 'confirm'
@@ -17,7 +17,22 @@ export default function LoginScreen({ onLogin }) {
   const [showPass, setShowPass]           = useState(false);
   const [confirmEmail, setConfirmEmail]   = useState(''); // Email awaiting confirmation
 
-  // ── Sign In ──────────────────────────────────────────────────────────
+  // ── Google Sign-In ─────────────────────────────────────────────────
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+      onLogin();
+    } catch (err) {
+      if (err.message !== 'Sign in cancelled') {
+        Alert.alert('Google Sign-In Failed', err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Sign In ────────────────────────────────────────────────────────
   const handleSignIn = async () => {
     if (!email.trim() || !password) {
       Alert.alert('Required Fields', 'Please enter your email and password.');
@@ -34,7 +49,7 @@ export default function LoginScreen({ onLogin }) {
     }
   };
 
-  // ── Sign Up ──────────────────────────────────────────────────────────
+  // ── Sign Up ────────────────────────────────────────────────────────
   const handleSignUp = async () => {
     if (!email.trim() || !password || !displayName.trim()) {
       Alert.alert('Required Fields', 'Please fill in all fields.');
@@ -51,7 +66,6 @@ export default function LoginScreen({ onLogin }) {
       const result = await signup(email.trim().toLowerCase(), password, displayName.trim());
 
       if (result.requiresEmailConfirmation) {
-        // Requires email verification
         setConfirmEmail(email.trim().toLowerCase());
         setMode('confirm');
         Alert.alert(
@@ -59,7 +73,6 @@ export default function LoginScreen({ onLogin }) {
           `A confirmation link has been sent to ${email}. Click the link in your email to verify your account.`
         );
       } else {
-        // Auto-logged in
         onLogin();
       }
     } catch (err) {
@@ -69,7 +82,7 @@ export default function LoginScreen({ onLogin }) {
     }
   };
 
-  // ── Resend Confirmation Email ────────────────────────────────────────
+  // ── Resend Confirmation Email ──────────────────────────────────────
   const handleResendConfirmation = async () => {
     if (!confirmEmail) {
       Alert.alert('Error', 'No email to resend confirmation to.');
@@ -102,14 +115,35 @@ export default function LoginScreen({ onLogin }) {
           <Text style={styles.tagline}>Fish Identification & Tracking</Text>
 
           {mode !== 'confirm' ? (
-            // ── Sign In / Sign Up Form ──────────────────────────────────────
+            // ── Sign In / Sign Up Form ──────────────────────────────────
             <View style={styles.card}>
               <Text style={styles.heading}>
-                {mode === 'signin' ? 'Sign In' : 'Create Account'}
+                {mode === 'signin' ? 'Welcome Back' : 'Create Account'}
               </Text>
               <Text style={styles.sub}>
-                {mode === 'signin' ? 'Use your account to start tracking' : 'Register your account'}
+                {mode === 'signin'
+                  ? 'Sign in to sync catches to UAE Angler'
+                  : 'Register your UAE Angler account'}
               </Text>
+
+              {/* Google Sign-In */}
+              <TouchableOpacity
+                style={styles.googleBtn}
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="logo-google" size={18} color="#fff" />
+                <Text style={styles.googleBtnText}>
+                  Continue with Google
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
               {/* Display Name (Sign Up only) */}
               {mode === 'signup' && (
@@ -190,7 +224,7 @@ export default function LoginScreen({ onLogin }) {
               </Text>
             </View>
           ) : (
-            // ── Email Confirmation Form ──────────────────────────────────────
+            // ── Email Confirmation Form ─────────────────────────────────
             <View style={styles.card}>
               <View style={styles.confirmHeader}>
                 <Ionicons name="mail-unread-outline" size={48} color="#00d4aa" />
@@ -276,6 +310,27 @@ const styles = StyleSheet.create({
   heading:       { color: '#e8f4fd', fontSize: 22, fontWeight: '800', marginBottom: 4 },
   sub:           { color: '#8ab4d4', fontSize: 13, marginBottom: 24 },
 
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4285F4',
+    borderRadius: 12,
+    height: 52,
+    gap: 10,
+    marginBottom: 20,
+  },
+  googleBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 12,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#1e3a6e' },
+  dividerText: { color: '#4a7fa8', fontSize: 12, fontWeight: '600' },
+
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -313,7 +368,6 @@ const styles = StyleSheet.create({
   togglePrompt:  { color: '#8ab4d4', fontSize: 13, textAlign: 'center', marginTop: 18 },
   toggleLink:    { color: '#00d4aa', fontWeight: '700' },
 
-  // Email confirmation screen styles
   confirmHeader: {
     alignItems: 'center',
     marginBottom: 24,

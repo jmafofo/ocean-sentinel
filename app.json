@@ -3,6 +3,7 @@
     "name": "Ocean Sentinel",
     "slug": "ocean-sentinel",
     "version": "1.0.0",
+    "scheme": "com.oceansentinel.app",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -32,20 +33,12 @@
       "package": "com.oceansentinel.app",
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VIDEO",
-        "android.permission.READ_MEDIA_AUDIO"
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
       "versionCode": 3
     },
@@ -55,14 +48,14 @@
     "plugins": [
       "expo-camera",
       "expo-location",
-      "expo-media-library",
       [
         "expo-sqlite",
         {
           "enableFTS": true,
           "useSQLCipher": false
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "modelCacheVersion": "1",

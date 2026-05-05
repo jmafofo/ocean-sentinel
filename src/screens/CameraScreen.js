@@ -4,7 +4,7 @@ import {
   ActivityIndicator, Image, Dimensions, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CameraView, Camera, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,12 +13,14 @@ import { initTensorFlow, loadModel, identifyFish } from '../services/fishIdentif
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIEWFINDER_SIZE = SCREEN_W * 0.75;
+const TORCH_COOLDOWN_MS = 600; // ms between torch toggles
 
 export default function CameraScreen({ navigation }) {
   const cameraRef = useRef(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState('back');
   const [torch, setTorch] = useState(false);
+  const [torchCooldown, setTorchCooldown] = useState(false);
   const [capturedUri, setCapturedUri] = useState(null);
   const [identifying, setIdentifying] = useState(false);
   const [modelReady, setModelReady] = useState(false);
@@ -29,7 +31,10 @@ export default function CameraScreen({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       setIsActive(true);
-      return () => setIsActive(false);
+      return () => {
+        setIsActive(false);
+        setTorch(false); // always extinguish torch when leaving screen
+      };
     }, [])
   );
 
@@ -50,37 +55,55 @@ export default function CameraScreen({ navigation }) {
     })();
   }, []);
 
-  // ── Permission handling ──────────────────────────────────────────
-  if (!permission) {
-    return <LoadingView message="Checking camera permissions…" />;
-  }
+  // ── Safe camera-facing switch ────────────────────────────────────
+  const switchFacing = useCallback(() => {
+    setFacing(prev => {
+      const next = prev === 'back' ? 'front' : 'back';
+      // Front cameras usually have no torch — auto-disable to prevent freeze
+      if (next === 'front' && torch) {
+        setTorch(false);
+      }
+      return next;
+    });
+  }, [torch]);
 
-  if (!permission.granted) {
-    return (
-      <SafeAreaView style={styles.permissionView}>
-        <Ionicons name="camera-outline" size={64} color="#00d4aa" style={{ marginBottom: 20 }} />
-        <Text style={styles.permTitle}>Camera Access Required</Text>
-        <Text style={styles.permText}>
-          Ocean Sentinel needs camera access to photograph and identify fish species.
-        </Text>
-        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Grant Camera Permission</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  // ── Torch toggle with cooldown ───────────────────────────────────
+  const toggleTorch = useCallback(() => {
+    if (torchCooldown) return;
+    if (facing === 'front') {
+      Alert.alert('Torch unavailable', 'Torch is only available on the rear camera.');
+      return;
+    }
+    setTorch(prev => !prev);
+    setTorchCooldown(true);
+    setTimeout(() => setTorchCooldown(false), TORCH_COOLDOWN_MS);
+  }, [torchCooldown, facing]);
 
-  // ── Capture photo ────────────────────────────────────────────────
+  // ── Capture photo (torch-safe) ───────────────────────────────────
   const capturePhoto = async () => {
     if (!cameraRef.current) return;
+
+    // Turn torch off momentarily before capture — this prevents the
+    // camera HAL from deadlocking on Android when torch + capture collide.
+    const hadTorch = torch;
+    if (hadTorch) setTorch(false);
+
+    // Small delay lets the driver settle after torch state change
+    if (hadTorch && Platform.OS === 'android') {
+      await new Promise(r => setTimeout(r, 150));
+    }
+
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.85,
-        skipProcessing: Platform.OS === 'android',
       });
       setCapturedUri(photo.uri);
+      // Keep torch OFF after capture — re-enable only when retaking
+      setTorch(false);
     } catch (err) {
       Alert.alert('Capture Failed', err.message);
+      // Restore torch on error so user can retry
+      if (hadTorch) setTorch(true);
     }
   };
 
@@ -169,6 +192,7 @@ export default function CameraScreen({ navigation }) {
     <View style={styles.cameraContainer}>
       {isActive && (
         <CameraView
+          key={facing}               // force remount on front/back switch
           ref={cameraRef}
           style={StyleSheet.absoluteFill}
           facing={facing}
@@ -178,11 +202,19 @@ export default function CameraScreen({ navigation }) {
 
       {/* Dark gradient top bar */}
       <SafeAreaView style={styles.topBar} edges={['top']}>
-        <TouchableOpacity onPress={() => setTorch(t => !t)} style={styles.iconBtn}>
-          <Ionicons name={torch ? 'flash' : 'flash-off'} size={22} color={torch ? '#ffb74d' : '#fff'} />
+        <TouchableOpacity
+          onPress={toggleTorch}
+          style={[styles.iconBtn, facing === 'front' && styles.iconBtnDisabled]}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={torch ? 'flash' : 'flash-off'}
+            size={22}
+            color={facing === 'front' ? '#555' : torch ? '#ffb74d' : '#fff'}
+          />
         </TouchableOpacity>
         <Text style={styles.cameraTitle}>Fish Scanner</Text>
-        <TouchableOpacity onPress={() => setFacing(f => f === 'back' ? 'front' : 'back')} style={styles.iconBtn}>
+        <TouchableOpacity onPress={switchFacing} style={styles.iconBtn} activeOpacity={0.7}>
           <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
         </TouchableOpacity>
       </SafeAreaView>
@@ -259,6 +291,7 @@ const styles = StyleSheet.create({
   },
   cameraTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   iconBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  iconBtnDisabled: { opacity: 0.4 },
 
   viewfinderWrapper: {
     flex: 1,

@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity,
+  View, Text, StyleSheet, ActivityIndicator, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import MapView, { Marker, Callout } from 'react-native-maps';
 
 import { getSightingsWithLocation, formatTimestamp } from '../services/database';
 
@@ -24,6 +25,31 @@ export default function MapScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  // Compute initial region from sightings (or default to UAE)
+  const getInitialRegion = () => {
+    if (sightings.length === 0) {
+      return {
+        latitude: 24.5,
+        longitude: 54.3,
+        latitudeDelta: 4,
+        longitudeDelta: 4,
+      };
+    }
+    const lats = sightings.map(s => s.latitude);
+    const lons = sightings.map(s => s.longitude);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+    const pad = 0.05;
+    return {
+      latitude: (minLat + maxLat) / 2,
+      longitude: (minLon + maxLon) / 2,
+      latitudeDelta: Math.max((maxLat - minLat) + pad * 2, 0.1),
+      longitudeDelta: Math.max((maxLon - minLon) + pad * 2, 0.1),
+    };
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -47,24 +73,31 @@ export default function MapScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <MapView
+          style={styles.map}
+          initialRegion={getInitialRegion()}
+          mapType="hybrid"
+        >
           {sightings.map(s => (
-            <View key={s.id} style={styles.card}>
-              <View style={styles.cardRow}>
-                <Text style={styles.cardName}>{s.speciesName}</Text>
-                <Text style={styles.cardConf}>{Math.round(s.confidence * 100)}%</Text>
-              </View>
-              <View style={styles.cardRow}>
-                <Ionicons name="location-outline" size={12} color="#8ab4d4" />
-                <Text style={styles.cardCoord}>
-                  {s.latitude.toFixed(4)}, {s.longitude.toFixed(4)}
-                </Text>
-                <Ionicons name="time-outline" size={12} color="#8ab4d4" style={styles.ml8} />
-                <Text style={styles.cardTime}>{formatTimestamp(s.timestamp)}</Text>
-              </View>
-            </View>
+            <Marker
+              key={s.id}
+              coordinate={{ latitude: s.latitude, longitude: s.longitude }}
+              pinColor="#00d4aa"
+            >
+              <Callout tooltip>
+                <View style={styles.callout}>
+                  <Text style={styles.calloutName}>{s.speciesName}</Text>
+                  <Text style={styles.calloutConf}>
+                    Confidence: {Math.round(s.confidence * 100)}%
+                  </Text>
+                  <Text style={styles.calloutTime}>
+                    {formatTimestamp(s.timestamp)}
+                  </Text>
+                </View>
+              </Callout>
+            </Marker>
           ))}
-        </ScrollView>
+        </MapView>
       )}
     </SafeAreaView>
   );
@@ -78,19 +111,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyTitle: { color: '#e8f4fd', fontSize: 17, fontWeight: '700', marginTop: 16 },
   emptyText: { color: '#8ab4d4', fontSize: 13, textAlign: 'center', lineHeight: 20, marginTop: 8 },
-  list: { paddingHorizontal: 20, paddingBottom: 24, gap: 10 },
-  card: {
+  map: { flex: 1 },
+  callout: {
     backgroundColor: '#0f2044',
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#142954',
-    gap: 6,
+    minWidth: 160,
   },
-  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  cardName: { color: '#e8f4fd', fontSize: 15, fontWeight: '700', flex: 1 },
-  cardConf: { color: '#00d4aa', fontSize: 13, fontWeight: '700' },
-  cardCoord: { color: '#8ab4d4', fontSize: 12 },
-  cardTime: { color: '#8ab4d4', fontSize: 12, flex: 1 },
-  ml8: { marginLeft: 8 },
+  calloutName: { color: '#e8f4fd', fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  calloutConf: { color: '#00d4aa', fontSize: 12, fontWeight: '600' },
+  calloutTime: { color: '#8ab4d4', fontSize: 11, marginTop: 2 },
 });

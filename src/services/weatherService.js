@@ -1,30 +1,13 @@
 /**
  * Weather Integration Service
  *
- * Fetches marine weather data including:
- * - Wind speed and direction
- * - Wave height and period
- * - Water temperature
- * - Tide information
- * - Weather alerts
+ * Uses Open-Meteo API (free, no API key required):
+ * - General weather: https://api.open-meteo.com/v1/forecast
+ * - Marine data:    https://marine-api.open-meteo.com/v1/marine
  */
 
-import * as Location from 'expo-location';
-
-// OpenWeatherMap API (free tier) - you'll need to get your own API key
-const OPENWEATHER_API_KEY = 'YOUR_OPENWEATHER_API_KEY'; // Replace with actual key
-const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
-
-// Marine weather APIs (free alternatives)
-const MARINE_APIS = {
-  // World Tide API (free tier available)
-  tides: 'https://www.worldtide.info/api/v2',
-  // Storm Glass (free tier)
-  waves: 'https://api.stormglass.io/v2',
-};
-
 /**
- * Get current weather conditions for marine activities
+ * Get current weather and marine conditions for a location.
  * @param {number} latitude
  * @param {number} longitude
  * @returns {Promise<Object>} Weather data
@@ -55,15 +38,10 @@ export async function getMarineWeather(latitude, longitude) {
 }
 
 /**
- * Get basic weather data from OpenWeatherMap
+ * Fetch general weather from Open-Meteo.
  */
 async function getWeatherData(latitude, longitude) {
-  if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY === 'YOUR_OPENWEATHER_API_KEY') {
-    // Return mock data if no API key
-    return getMockWeatherData();
-  }
-
-  const url = `${OPENWEATHER_BASE_URL}/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,wind_direction_10m,weather_code,cloud_cover&timezone=auto`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -71,70 +49,80 @@ async function getWeatherData(latitude, longitude) {
   }
 
   const data = await response.json();
+  const current = data.current;
 
   return {
-    temperature: data.main.temp,
-    humidity: data.main.humidity,
-    pressure: data.main.pressure,
-    visibility: data.visibility,
-    windSpeed: data.wind.speed,
-    windDirection: data.wind.deg,
-    weather: data.weather[0].main,
-    description: data.weather[0].description,
-    cloudCover: data.clouds.all,
-    sunrise: data.sys.sunrise * 1000,
-    sunset: data.sys.sunset * 1000,
+    temperature: current.temperature_2m,
+    humidity: current.relative_humidity_2m,
+    pressure: current.pressure_msl,
+    windSpeed: current.wind_speed_10m,
+    windDirection: current.wind_direction_10m,
+    weather: weatherCodeToString(current.weather_code),
+    description: weatherCodeToDescription(current.weather_code),
+    cloudCover: current.cloud_cover,
   };
 }
 
 /**
- * Get marine-specific conditions (waves, tides, water temp)
+ * Fetch marine conditions from Open-Meteo Marine API.
  */
 async function getMarineConditions(latitude, longitude) {
-  // For now, return mock marine data
-  // In production, integrate with actual marine APIs
-  return getMockMarineData();
-}
+  const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${latitude}&longitude=${longitude}&current=wave_height,sea_surface_temperature&timezone=auto`;
 
-/**
- * Mock weather data for development
- */
-function getMockWeatherData() {
-  const conditions = ['Clear', 'Clouds', 'Rain', 'Windy', 'Foggy'];
-  const descriptions = ['clear sky', 'few clouds', 'light rain', 'moderate breeze', 'mist'];
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Marine API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const current = data.current;
 
   return {
-    temperature: 18 + Math.random() * 12, // 18-30°C
-    humidity: 60 + Math.random() * 30, // 60-90%
-    pressure: 1000 + Math.random() * 50, // 1000-1050 hPa
-    visibility: 8000 + Math.random() * 2000, // 8-10km
-    windSpeed: Math.random() * 15, // 0-15 m/s
-    windDirection: Math.random() * 360, // 0-360°
-    weather: conditions[Math.floor(Math.random() * conditions.length)],
-    description: descriptions[Math.floor(Math.random() * descriptions.length)],
-    cloudCover: Math.random() * 100, // 0-100%
-    sunrise: Date.now() - 6 * 60 * 60 * 1000, // 6 hours ago
-    sunset: Date.now() + 6 * 60 * 60 * 1000, // 6 hours from now
+    waveHeight: current.wave_height,
+    waterTemperature: current.sea_surface_temperature,
   };
 }
 
 /**
- * Mock marine data for development
+ * Convert WMO weather code to a short condition string.
  */
-function getMockMarineData() {
-  return {
-    waveHeight: 0.5 + Math.random() * 2.5, // 0.5-3m
-    wavePeriod: 8 + Math.random() * 8, // 8-16 seconds
-    waterTemperature: 15 + Math.random() * 10, // 15-25°C
-    tide: {
-      height: -1 + Math.random() * 4, // -1 to +3m
-      type: Math.random() > 0.5 ? 'high' : 'low',
-      nextChange: Date.now() + (2 + Math.random() * 4) * 60 * 60 * 1000, // 2-6 hours
-    },
-    currentSpeed: Math.random() * 2, // 0-2 knots
-    currentDirection: Math.random() * 360,
-    visibility: 5 + Math.random() * 15, // 5-20 nautical miles
+function weatherCodeToString(code) {
+  if (code === 0) return 'Clear';
+  if (code >= 1 && code <= 3) return 'Clouds';
+  if (code >= 45 && code <= 48) return 'Fog';
+  if (code >= 51 && code <= 67) return 'Rain';
+  if (code >= 71 && code <= 77) return 'Snow';
+  if (code >= 80 && code <= 82) return 'Rain';
+  if (code >= 85 && code <= 86) return 'Snow';
+  if (code >= 95 && code <= 99) return 'Thunderstorm';
+  return 'Unknown';
+}
+
+function weatherCodeToDescription(code) {
+  const map = {
+    0: 'clear sky',
+    1: 'mainly clear',
+    2: 'partly cloudy',
+    3: 'overcast',
+    45: 'fog',
+    48: 'depositing rime fog',
+    51: 'light drizzle',
+    53: 'moderate drizzle',
+    55: 'dense drizzle',
+    61: 'slight rain',
+    63: 'moderate rain',
+    65: 'heavy rain',
+    71: 'slight snow',
+    73: 'moderate snow',
+    75: 'heavy snow',
+    80: 'slight rain showers',
+    81: 'moderate rain showers',
+    82: 'violent rain showers',
+    95: 'thunderstorm',
+    96: 'thunderstorm with slight hail',
+    99: 'thunderstorm with heavy hail',
   };
+  return map[code] ?? 'unknown';
 }
 
 /**
@@ -157,12 +145,12 @@ export function assessWeatherSuitability(weatherData) {
   const reasons = [];
   const recommendations = [];
 
-  // Wind assessment
-  if (windSpeed > 20) {
+  // Wind assessment (Open-Meteo returns km/h)
+  if (windSpeed > 30) {
     score -= 40;
     reasons.push('Strong winds may affect visibility and wave conditions');
-    recommendations.push('Consider postponing if winds exceed 20 knots');
-  } else if (windSpeed > 10) {
+    recommendations.push('Consider postponing if winds exceed 30 km/h');
+  } else if (windSpeed > 15) {
     score -= 20;
     reasons.push('Moderate winds may create choppy conditions');
   }
@@ -211,20 +199,14 @@ export function assessWeatherSuitability(weatherData) {
   };
 }
 
-/**
- * Get wind condition description
- */
 function getWindCondition(speed) {
   if (speed < 5) return 'Calm';
-  if (speed < 10) return 'Light';
-  if (speed < 15) return 'Moderate';
-  if (speed < 20) return 'Strong';
+  if (speed < 15) return 'Light';
+  if (speed < 25) return 'Moderate';
+  if (speed < 35) return 'Strong';
   return 'Gale';
 }
 
-/**
- * Get wave condition description
- */
 function getWaveCondition(height) {
   if (height < 0.5) return 'Calm';
   if (height < 1) return 'Light chop';
@@ -233,9 +215,6 @@ function getWaveCondition(height) {
   return 'Very rough';
 }
 
-/**
- * Get weather condition description
- */
 function getWeatherCondition(weather) {
   switch (weather) {
     case 'Clear': return 'Sunny';
@@ -248,9 +227,6 @@ function getWeatherCondition(weather) {
   }
 }
 
-/**
- * Get temperature condition description
- */
 function getTemperatureCondition(temp) {
   if (temp < 0) return 'Freezing';
   if (temp < 10) return 'Cold';

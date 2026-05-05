@@ -12,6 +12,7 @@
  */
 
 import fishSpecies from '../data/fishSpecies.json';
+import molecularMarkers from '../data/molecularMarkers.json';
 
 // Confidence thresholds for molecular analysis
 export const MOLECULAR_VERY_HIGH = 0.95;
@@ -52,11 +53,12 @@ export async function identifyByEdna(ednaSequence) {
 
   // Compare against known sequences for each species
   for (const species of fishSpecies) {
-    if (!species.molecularMarkers?.coiBarcode) continue;
+    const markers = molecularMarkers[species.id];
+    if (!markers?.coiBarcode) continue;
 
     // Calculate sequence similarity using Hamming distance (simplified)
-    const similarity = calculateSequenceSimilarity(normalized, species.molecularMarkers.coiBarcode);
-    
+    const similarity = calculateSequenceSimilarity(normalized, markers.coiBarcode);
+
     if (similarity > 0.75) { // Only include matches >75% similar
       speciesMatches[species.id] = {
         species,
@@ -109,14 +111,15 @@ export async function identifyBySNP(snpData) {
 
   // Compare against SNP profiles for each species
   for (const species of fishSpecies) {
-    if (!species.molecularMarkers?.snpProfile) continue;
+    const markers = molecularMarkers[species.id];
+    if (!markers?.snpProfile) continue;
 
     // Calculate SNP concordance
-    const concordance = calculateSnpConcordance(snpData, species.molecularMarkers.snpProfile);
-    
+    const concordance = calculateSnpConcordance(snpData, markers.snpProfile);
+
     if (concordance.matchedSnps > 0) {
       const confidence = concordance.matchedSnps / Math.max(concordance.totalSnps, 1);
-      
+
       if (confidence > 0.60) { // Include matches >60% concordant
         speciesMatches[species.id] = {
           species,
@@ -162,12 +165,13 @@ export async function identifyByMicrosatellite(microsatelliteData) {
   const speciesMatches = {};
 
   for (const species of fishSpecies) {
-    if (!species.molecularMarkers?.microsatellites) continue;
+    const markers = molecularMarkers[species.id];
+    if (!markers?.microsatellites) continue;
 
     // Calculate allele size matching
     const matchScore = calculateMicrosatelliteMatch(
       microsatelliteData,
-      species.molecularMarkers.microsatellites
+      markers.microsatellites
     );
 
     if (matchScore > 0.50) {
