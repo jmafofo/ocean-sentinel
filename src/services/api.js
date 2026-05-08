@@ -108,29 +108,19 @@ export async function identifyFish(imageUri, location = null) {
     ...(location ? { latitude: location.latitude, longitude: location.longitude } : {}),
   };
 
-  // Always go through the server — /api/identify accepts unauthenticated requests.
-  // apiFetch attaches the Bearer token if present (for catch logging), omits it if not.
+  // Use apiFetch so we get auto-refresh on expired tokens.
+  // /api/identify accepts unauthenticated requests, but if the user is logged
+  // in we send the token so the catch can be linked to their account.
   let res;
   try {
-    res = await fetch(`${API_BASE}/api/identify`, {
+    res = await apiFetch('/api/identify', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Attach token only if available — server still processes without it
-        ...(await getToken().then(t => t ? { Authorization: `Bearer ${t}` } : {})),
-      },
       body: JSON.stringify(payload),
     });
-  } catch (networkErr) {
-    console.warn('[API] identifyFish network error:', networkErr.message);
-    throw new Error('No internet connection. Please check your network and try again.');
-  }
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err.error ?? `Identification failed (HTTP ${res.status})`;
-    console.warn(`[API] identifyFish server failed — HTTP ${res.status}:`, msg);
-    throw new Error(msg);
+  } catch (err) {
+    // apiFetch already throws 'SESSION_EXPIRED' after refresh fails,
+    // or 'No internet connection' for network errors.
+    throw err;
   }
 
   const data = await res.json();

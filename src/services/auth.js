@@ -47,12 +47,11 @@ const USER_KEY    = 'uae_user';
  * custom scheme in the Supabase dashboard.
  */
 function getOAuthRedirectUri() {
-  // Expo Go / store client → auth.expo.io proxy (HTTPS)
+  // Expo Go must use the auth.expo.io proxy (HTTPS) because Supabase
+  // rejects custom scheme redirects. makeRedirectUri() with a scheme
+  // can return a custom URL in Expo Go, so we hard-code the proxy URL.
   if (Constants.appOwnership === 'expo') {
-    return makeRedirectUri({
-      scheme: 'com.oceansentinel.app',
-      path: 'auth/callback',
-    });
+    return 'https://auth.expo.io/@mafofoj/ocean-sentinel';
   }
 
   // Standalone / bare builds → uaeangler.com callback (HTTPS)
