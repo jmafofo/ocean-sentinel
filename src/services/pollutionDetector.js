@@ -1,15 +1,17 @@
 /**
  * Pollution Detection Service
  *
- * Analyses water photos for pollution indicators using Claude Vision.
- * Replaces the previous TensorFlow-based implementation.
+ * Analyses water photos for pollution indicators via the UAE Angler backend
+ * (/api/pollution). Claude Vision runs server-side so the Anthropic API key
+ * is never bundled in the app.
  *
  * Detected pollutant types:
  *   oil_sheen · turbidity · algae_bloom · plastic_debris · chemical_stain
  */
 
 import * as ImageManipulator from 'expo-image-manipulator';
-import { ANTHROPIC_API_KEY, ANTHROPIC_MODEL } from '../config';
+import { API_BASE } from '../config';
+import { getToken } from './auth';
 
 const POLLUTION_TYPES = {
   oil_sheen: {
@@ -78,10 +80,11 @@ const RECOMMENDATIONS = {
 };
 
 /**
- * Analyse a water image for pollution indicators via Claude Vision.
+ * Analyse a water image for pollution indicators.
+ * Image is resized and sent to /api/pollution on UAE Angler.
  *
  * @param {string} imageUri — local file URI from camera / gallery
- * @returns {Promise<{detected, overallScore, pollutants, recommendations, timestamp}>}
+ * @returns {Promise<{detected, overallScore, pollutants, recommendations, assessment, timestamp}>}
  */
 export async function analyzePollution(imageUri) {
   // Resize to 800px before upload
@@ -91,95 +94,46 @@ export async function analyzePollution(imageUri) {
     { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true }
   );
 
-  const prompt = `You are an environmental scientist specialising in marine water-quality assessment.
-
-Analyse this water photo for signs of pollution. The image may show coastal water, a beach, a harbour, or open sea in the UAE / Arabian Gulf region.
-
-Check for each of the following:
-1. OIL_SHEEN — rainbow or iridescent film on the water surface
-2. TURBIDITY — unusually cloudy, murky, or sediment-laden water
-3. ALGAE_BLOOM — green, blue-green, or red discoloration from algae
-4. PLASTIC_DEBRIS — visible plastic bags, bottles, foam, or other waste
-5. CHEMICAL_STAIN — unnatural colour (orange, purple, black) suggesting chemical discharge
-
-For each type, assess:
-- detected: true/false
-- confidence: 0.0–1.0 (how certain you are)
-- evidence: brief description of what you saw
-
-Return ONLY valid JSON — no markdown, no commentary:
-{
-  "pollutants": [
-    { "type": "oil_sheen",       "detected": false, "confidence": 0.0, "evidence": "" },
-    { "type": "turbidity",       "detected": false, "confidence": 0.0, "evidence": "" },
-    { "type": "algae_bloom",     "detected": false, "confidence": 0.0, "evidence": "" },
-    { "type": "plastic_debris",  "detected": false, "confidence": 0.0, "evidence": "" },
-    { "type": "chemical_stain",  "detected": false, "confidence": 0.0, "evidence": "" }
-  ],
-  "overall_assessment": "Brief 1–2 sentence summary of the water quality."
-}`;
+  const token = await getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 
   let res;
   try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
+    res = await fetch(`${API_BASE}/api/pollution`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-      },
+      headers,
       body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 1024,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: resized.base64 } },
-            { type: 'text', text: prompt },
-          ],
-        }],
+        imageBase64: resized.base64,
+        mimeType: 'image/jpeg',
       }),
     });
-  } catch (networkErr) {
+  } catch {
     throw new Error('No internet connection. Cannot analyse pollution without network.');
   }
 
   if (!res.ok) {
-    throw new Error(`Pollution analysis failed (HTTP ${res.status}). Please try again.`);
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(errBody.error ?? `Pollution analysis failed (HTTP ${res.status})`);
   }
 
   const data = await res.json();
-  const rawText = data.content?.[0]?.text ?? '';
 
-  let parsed;
-  try {
-    const clean = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
-    parsed = JSON.parse(clean);
-  } catch {
-    throw new Error('Could not parse pollution analysis result. Please try again.');
-  }
-
-  const pollutants = (parsed.pollutants ?? [])
-    .filter(p => p.detected)
-    .map(p => ({
-      type: p.type,
-      detected: true,
-      confidence: p.confidence ?? 0.5,
-      evidence: p.evidence ?? '',
-      ...POLLUTION_TYPES[p.type],
-    }));
-
-  const overallScore = pollutants.length > 0
-    ? pollutants.reduce((sum, p) => sum + p.confidence, 0) / pollutants.length
-    : 0;
+  // Merge backend pollutant data with local display metadata
+  const pollutants = (data.pollutants ?? []).map(p => ({
+    ...p,
+    ...POLLUTION_TYPES[p.type],
+  }));
 
   return {
-    detected: pollutants.length > 0,
-    overallScore,
+    detected:        data.detected ?? pollutants.length > 0,
+    overallScore:    data.overallScore ?? 0,
     pollutants,
     recommendations: pollutants.map(p => RECOMMENDATIONS[p.type]).filter(Boolean),
-    assessment: parsed.overall_assessment ?? '',
-    timestamp: Date.now(),
+    assessment:      data.assessment ?? '',
+    timestamp:       Date.now(),
   };
 }
 

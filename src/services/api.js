@@ -123,6 +123,12 @@ export async function identifyFish(imageUri, location = null) {
     throw err;
   }
 
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const msg = errBody.error ?? `Identification failed (HTTP ${res.status})`;
+    throw new Error(msg);
+  }
+
   const data = await res.json();
 
   // Prefer server-provided confidence_pct; fall back to string→number mapping
