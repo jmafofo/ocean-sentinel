@@ -26,6 +26,7 @@ export default function CameraScreen({ navigation }) {
   const [modelReady, setModelReady] = useState(false);
   const [modelLoading, setModelLoading] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [capturing, setCapturing] = useState(false);
 
   // Pause camera when navigating away to free resources
   useFocusEffect(
@@ -81,22 +82,36 @@ export default function CameraScreen({ navigation }) {
 
   // ── Capture photo (torch-safe) ───────────────────────────────────
   const capturePhoto = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current || capturing) return;
+    setCapturing(true);
 
     // Turn torch off momentarily before capture — this prevents the
     // camera HAL from deadlocking on Android when torch + capture collide.
     const hadTorch = torch;
     if (hadTorch) setTorch(false);
 
-    // Small delay lets the driver settle after torch state change
-    if (hadTorch && Platform.OS === 'android') {
-      await new Promise(r => setTimeout(r, 150));
+    // Longer delay lets the driver settle after torch state change.
+    // 150 ms is too short for many Samsung / Xiaomi / Pixel devices.
+    if (hadTorch) {
+      await new Promise(r => setTimeout(r, Platform.OS === 'android' ? 400 : 200));
+    }
+
+    // Defensive: ref may have been nulled while we awaited
+    if (!cameraRef.current) {
+      setCapturing(false);
+      return;
     }
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.85,
-      });
+      const photo = await Promise.race([
+        cameraRef.current.takePictureAsync({
+          quality: 0.85,
+          skipProcessing: true, // avoids extra native processing that can hang
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Camera capture timed out. Please try again.')), 5000)
+        ),
+      ]);
       setCapturedUri(photo.uri);
       // Keep torch OFF after capture — re-enable only when retaking
       setTorch(false);
@@ -104,6 +119,8 @@ export default function CameraScreen({ navigation }) {
       Alert.alert('Capture Failed', err.message);
       // Restore torch on error so user can retry
       if (hadTorch) setTorch(true);
+    } finally {
+      setCapturing(false);
     }
   };
 
@@ -141,12 +158,16 @@ export default function CameraScreen({ navigation }) {
       navigation.navigate('Identification', { results, imageUri: capturedUri });
       setCapturedUri(null);
     } catch (err) {
-      Alert.alert(
-        'Identification Failed',
-        err.message.includes('model') || err.message.includes('network')
-          ? 'Could not load the AI model. Please connect to the internet for the initial model download (~14MB).'
-          : `Unexpected error: ${err.message}`
-      );
+      const msg = err.message ?? '';
+      let userMessage;
+      if (msg === 'SESSION_EXPIRED') {
+        userMessage = 'Your session has expired. Please sign in again from the Profile tab.';
+      } else if (msg.includes('internet') || msg.includes('connection') || msg.includes('network')) {
+        userMessage = msg; // already user-friendly from apiFetch
+      } else {
+        userMessage = `Identification failed: ${msg}`;
+      }
+      Alert.alert('Identification Failed', userMessage);
     } finally {
       setIdentifying(false);
     }
@@ -197,6 +218,7 @@ export default function CameraScreen({ navigation }) {
           style={StyleSheet.absoluteFill}
           facing={facing}
           enableTorch={torch}
+          flash={torch ? 'off' : 'auto'}  // auto-flash + torch = HAL deadlock
         />
       )}
 
@@ -249,8 +271,13 @@ export default function CameraScreen({ navigation }) {
           <Text style={styles.galleryLabel}>Gallery</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.shutterBtn} onPress={capturePhoto}>
-          <View style={styles.shutterInner} />
+        <TouchableOpacity
+          style={[styles.shutterBtn, capturing && styles.shutterBtnDisabled]}
+          onPress={capturePhoto}
+          disabled={capturing}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.shutterInner, capturing && styles.shutterInnerDisabled]} />
         </TouchableOpacity>
 
         <View style={{ width: 64 }} />
@@ -369,6 +396,12 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: '#fff',
+  },
+  shutterBtnDisabled: {
+    borderColor: '#888',
+  },
+  shutterInnerDisabled: {
+    backgroundColor: '#888',
   },
 
   // Preview

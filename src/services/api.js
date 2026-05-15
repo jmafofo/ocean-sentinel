@@ -13,7 +13,10 @@ import { getToken, refreshSession, logout } from './auth';
 
 // ── Internal fetch wrapper ────────────────────────────────────────────────────
 
-let _refreshing = false;
+// Shared refresh Promise — concurrent 401s all await the same in-flight
+// refresh instead of triggering independent refresh calls or being silently
+// dropped. Set to null when the refresh completes (success or failure).
+let _refreshPromise = null;
 
 async function apiFetch(path, options = {}, retry = true) {
   const token = await getToken();
@@ -32,15 +35,15 @@ async function apiFetch(path, options = {}, retry = true) {
     throw new Error('No internet connection. Please check your network and try again.');
   }
 
-  // Auto-refresh on 401
-  if (res.status === 401 && retry && !_refreshing) {
+  // Auto-refresh on 401 — all concurrent callers share one refresh attempt
+  if (res.status === 401 && retry) {
+    if (!_refreshPromise) {
+      _refreshPromise = refreshSession().finally(() => { _refreshPromise = null; });
+    }
     try {
-      _refreshing = true;
-      await refreshSession();
-      _refreshing = false;
-      return apiFetch(path, options, false); // retry once
+      await _refreshPromise;
+      return apiFetch(path, options, false); // retry once with new token
     } catch {
-      _refreshing = false;
       await logout();
       throw new Error('SESSION_EXPIRED');
     }

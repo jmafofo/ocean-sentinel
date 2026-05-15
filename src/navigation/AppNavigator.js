@@ -62,8 +62,14 @@ function HomeStackNavigator({ onLogout }) {
   );
 }
 
-function ProfileTabScreen({ onLogout }) {
-  return <ProfileScreen route={{ params: { onLogout } }} navigation={{ goBack: () => {} }} />;
+function ProfileTabScreen({ navigation, route, onLogout }) {
+  // Forward the real navigation prop so goBack() and navigate() work correctly
+  return (
+    <ProfileScreen
+      navigation={navigation}
+      route={{ ...route, params: { ...(route?.params ?? {}), onLogout } }}
+    />
+  );
 }
 
 export default function AppNavigator({ onLogout }) {
@@ -135,7 +141,7 @@ export default function AppNavigator({ onLogout }) {
         <Tab.Screen name="History" component={HistoryScreen} />
         <Tab.Screen name="Map" component={MapScreen} />
         <Tab.Screen name="Profile">
-          {() => <ProfileTabScreen onLogout={onLogout} />}
+          {(props) => <ProfileTabScreen {...props} onLogout={onLogout} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

@@ -352,13 +352,55 @@ export async function getUser() {
 }
 
 /**
- * Returns true if a valid token is stored.
- * Verifies the token with Supabase to catch stale/expired sessions.
+ * Decode the exp claim from a JWT without a network call.
+ * Returns the expiry as a Unix timestamp (seconds), or null if unparseable.
+ */
+function getJwtExpiry(token) {
+  try {
+    const [, payloadB64] = token.split('.');
+    // base64url → base64 (pad to multiple of 4)
+    const padded = payloadB64.replace(/-/g, '+').replace(/_/g, '/') +
+                   '='.repeat((4 - payloadB64.length % 4) % 4);
+    const payload = JSON.parse(atob(padded));
+    return typeof payload.exp === 'number' ? payload.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns true if a valid, non-expired token is stored.
+ *
+ * Fast path: decodes the JWT expiry claim locally — no network call needed
+ * when the token is still fresh (saves a round-trip on every tab focus).
+ *
+ * If the token is expired or close to expiry, attempts a silent refresh.
+ * Falls back to true when offline (token exists but can't be verified).
  */
 export async function isLoggedIn() {
   const token = await AsyncStorage.getItem(TOKEN_KEY);
   if (!token) return false;
 
+  const exp = getJwtExpiry(token);
+  const BUFFER_MS = 60 * 1000; // treat token as expired 60s before actual expiry
+
+  if (exp !== null) {
+    const expiresAt = exp * 1000;
+    if (Date.now() < expiresAt - BUFFER_MS) {
+      // Token is fresh — no network needed
+      return true;
+    }
+    // Token is expired or about to expire — try silent refresh
+    try {
+      await refreshSession();
+      return true;
+    } catch {
+      await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_KEY, USER_KEY]);
+      return false;
+    }
+  }
+
+  // Can't decode expiry (malformed token) — verify with Supabase
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: {
@@ -366,16 +408,13 @@ export async function isLoggedIn() {
         Authorization: `Bearer ${token}`,
       },
     });
-
     if (!res.ok) {
-      // Token is invalid or expired — clear it
       await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_KEY, USER_KEY]);
       return false;
     }
-
     return true;
   } catch {
-    // Offline — assume token is valid if it exists
+    // Offline — assume valid if token exists
     return true;
   }
 }
