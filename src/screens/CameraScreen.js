@@ -9,7 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { initTensorFlow, loadModel, identifyFish } from '../services/fishIdentifier';
+import { identifyFish } from '../services/fishIdentifier';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIEWFINDER_SIZE = SCREEN_W * 0.75;
@@ -23,8 +23,6 @@ export default function CameraScreen({ navigation }) {
   const [torchCooldown, setTorchCooldown] = useState(false);
   const [capturedUri, setCapturedUri] = useState(null);
   const [identifying, setIdentifying] = useState(false);
-  const [modelReady, setModelReady] = useState(false);
-  const [modelLoading, setModelLoading] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [capturing, setCapturing] = useState(false);
 
@@ -38,23 +36,6 @@ export default function CameraScreen({ navigation }) {
       };
     }, [])
   );
-
-  // Pre-warm TF.js and model on mount
-  useEffect(() => {
-    (async () => {
-      setModelLoading(true);
-      try {
-        await initTensorFlow();
-        await loadModel();
-        setModelReady(true);
-      } catch (err) {
-        console.warn('[Camera] Model pre-load failed:', err.message);
-        // Will retry when user taps Scan
-      } finally {
-        setModelLoading(false);
-      }
-    })();
-  }, []);
 
   // ── Safe camera-facing switch ────────────────────────────────────
   const switchFacing = useCallback(() => {
@@ -147,13 +128,6 @@ export default function CameraScreen({ navigation }) {
     if (!capturedUri) return;
     setIdentifying(true);
     try {
-      if (!modelReady) {
-        setModelLoading(true);
-        await initTensorFlow();
-        await loadModel();
-        setModelReady(true);
-        setModelLoading(false);
-      }
       const results = await identifyFish(capturedUri);
       navigation.navigate('Identification', { results, imageUri: capturedUri });
       setCapturedUri(null);
@@ -256,14 +230,6 @@ export default function CameraScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Model loading badge */}
-      {modelLoading && (
-        <View style={styles.modelBadge}>
-          <ActivityIndicator size="small" color="#00d4aa" />
-          <Text style={styles.modelBadgeText}>Loading AI model…</Text>
-        </View>
-      )}
-
       {/* Bottom controls */}
       <View style={styles.controls}>
         <TouchableOpacity style={styles.galleryBtn} onPress={pickFromGallery}>
@@ -294,15 +260,6 @@ function Corner({ position }) {
     bottomRight: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3 },
   }[position];
   return <View style={[styles.corner, posStyle]} />;
-}
-
-function LoadingView({ message }) {
-  return (
-    <View style={styles.loadingView}>
-      <ActivityIndicator color="#00d4aa" size="large" />
-      <Text style={styles.loadingText}>{message}</Text>
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({

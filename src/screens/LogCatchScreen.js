@@ -244,7 +244,7 @@ export default function LogCatchScreen({ route, navigation }) {
             <View style={styles.gpsRow}>
               <Ionicons name="location" size={13} color={C.accent} />
               <Text style={styles.gpsText}>
-                GPS: {location.latitude.toFixed(5)}°N  {location.longitude.toFixed(5)}°E
+                GPS: {Math.abs(location.latitude).toFixed(5)}°{location.latitude >= 0 ? 'N' : 'S'}{'  '}{Math.abs(location.longitude).toFixed(5)}°{location.longitude >= 0 ? 'E' : 'W'}
               </Text>
             </View>
           )}

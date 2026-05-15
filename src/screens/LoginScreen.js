@@ -12,7 +12,6 @@ export default function LoginScreen({ onLogin }) {
   const [email, setEmail]                 = useState('');
   const [password, setPassword]           = useState('');
   const [displayName, setDisplayName]     = useState('');
-  const [confirmCode, setConfirmCode]     = useState('');
   const [loading, setLoading]             = useState(false);
   const [showPass, setShowPass]           = useState(false);
   const [confirmEmail, setConfirmEmail]   = useState(''); // Email awaiting confirmation
@@ -273,7 +272,6 @@ export default function LoginScreen({ onLogin }) {
                   setMode('signin');
                   setEmail('');
                   setPassword('');
-                  setConfirmCode('');
                   setConfirmEmail('');
                 }}
                 style={styles.backBtn}

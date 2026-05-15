@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { isLoggedIn, getUser, logout } from '../services/auth';
+import { getSightingCount, getUniqueSpeciesCount } from '../services/database';
 import LoginScreen from './LoginScreen';
 
 const C = {
@@ -24,14 +25,25 @@ export default function ProfileScreen({ route, navigation }) {
   const { onLogout } = route.params ?? {};
   const [loggedIn, setLoggedIn] = useState(null);
   const [user, setUser] = useState(null);
+  const [catchCount, setCatchCount] = useState(null);
+  const [speciesCount, setSpeciesCount] = useState(null);
 
   const load = async () => {
     const ok = await isLoggedIn();
     setLoggedIn(ok);
     if (ok) {
-      setUser(await getUser());
+      const [u, catches, species] = await Promise.all([
+        getUser(),
+        getSightingCount(),
+        getUniqueSpeciesCount(),
+      ]);
+      setUser(u);
+      setCatchCount(catches);
+      setSpeciesCount(species);
     } else {
       setUser(null);
+      setCatchCount(null);
+      setSpeciesCount(null);
     }
   };
 
@@ -117,12 +129,16 @@ export default function ProfileScreen({ route, navigation }) {
           <View style={styles.statCard}>
             <Ionicons name="fish-outline" size={20} color={C.accent} />
             <Text style={styles.statLabel}>Catches</Text>
-            <Text style={styles.statValue}>—</Text>
+            <Text style={styles.statValue}>
+              {catchCount === null ? '—' : catchCount}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="trophy-outline" size={20} color={C.accent} />
             <Text style={styles.statLabel}>Species</Text>
-            <Text style={styles.statValue}>—</Text>
+            <Text style={styles.statValue}>
+              {speciesCount === null ? '—' : speciesCount}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="location-outline" size={20} color={C.accent} />

@@ -10,6 +10,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getAllSightings, deleteSighting, formatTimestamp } from '../services/database';
 import fishSpecies from '../data/fishSpecies.json';
 
+// Precomputed once at module load — O(1) lookup by speciesId during search/render
+const speciesById = new Map(fishSpecies.map(f => [f.id, f]));
+
 export default function HistoryScreen({ navigation }) {
   const [sightings, setSightings] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -46,7 +49,7 @@ export default function HistoryScreen({ navigation }) {
     setFiltered(
       sightings.filter(s =>
         s.speciesName.toLowerCase().includes(q) ||
-        (fishSpecies.find(f => f.id === s.speciesId)?.scientificName ?? '').toLowerCase().includes(q)
+        (speciesById.get(s.speciesId)?.scientificName ?? '').toLowerCase().includes(q)
       )
     );
   };
@@ -70,7 +73,7 @@ export default function HistoryScreen({ navigation }) {
   };
 
   const renderItem = ({ item }) => {
-    const species = fishSpecies.find(f => f.id === item.speciesId);
+    const species = speciesById.get(item.speciesId);
     return (
       <View style={styles.card}>
         <View style={styles.cardIcon}>
