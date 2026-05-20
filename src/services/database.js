@@ -5,6 +5,13 @@
  * Schema:
  *   sightings (id, speciesId, speciesName, confidence, latitude, longitude,
  *              imageUri, timestamp, notes)
+ *
+ * Schema versioning via PRAGMA user_version ensures future column additions
+ * are applied to existing installs — not just first-run CREATE TABLE IF NOT EXISTS.
+ *
+ * To add a new migration:
+ *   1. Increment SCHEMA_VERSION
+ *   2. Add an `if (current < N)` block inside initSchema with your DDL
  */
 
 import * as SQLite from 'expo-sqlite';
@@ -12,6 +19,9 @@ import * as SQLite from 'expo-sqlite';
 let db = null;
 
 const DB_NAME = 'ocean_sentinel.db';
+
+/** Bump this whenever a new migration block is added below. */
+const SCHEMA_VERSION = 1;
 
 async function getDb() {
   if (!db) {
@@ -22,24 +32,40 @@ async function getDb() {
 }
 
 async function initSchema(database) {
-  await database.execAsync(`
-    PRAGMA journal_mode = WAL;
+  // WAL mode — set once, persists in the file header
+  await database.execAsync('PRAGMA journal_mode = WAL;');
 
-    CREATE TABLE IF NOT EXISTS sightings (
-      id          INTEGER PRIMARY KEY AUTOINCREMENT,
-      speciesId   TEXT    NOT NULL,
-      speciesName TEXT    NOT NULL,
-      confidence  REAL    NOT NULL,
-      latitude    REAL,
-      longitude   REAL,
-      imageUri    TEXT,
-      timestamp   INTEGER NOT NULL,
-      notes       TEXT    DEFAULT ''
-    );
+  // Read the current schema version stored in the DB file header
+  const row = await database.getFirstAsync('PRAGMA user_version;');
+  const current = row?.user_version ?? 0;
 
-    CREATE INDEX IF NOT EXISTS idx_sightings_timestamp ON sightings(timestamp DESC);
-    CREATE INDEX IF NOT EXISTS idx_sightings_species   ON sightings(speciesId);
-  `);
+  if (current < 1) {
+    // ── v1 — initial schema ────────────────────────────────────────────────
+    await database.execAsync(`
+      CREATE TABLE IF NOT EXISTS sightings (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        speciesId   TEXT    NOT NULL,
+        speciesName TEXT    NOT NULL,
+        confidence  REAL    NOT NULL,
+        latitude    REAL,
+        longitude   REAL,
+        imageUri    TEXT,
+        timestamp   INTEGER NOT NULL,
+        notes       TEXT    DEFAULT ''
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_sightings_timestamp ON sightings(timestamp DESC);
+      CREATE INDEX IF NOT EXISTS idx_sightings_species   ON sightings(speciesId);
+    `);
+    await database.execAsync('PRAGMA user_version = 1;');
+  }
+
+  // ── Future migrations — add blocks here as needed ──────────────────────
+  // Example:
+  // if (current < 2) {
+  //   await database.execAsync(`ALTER TABLE sightings ADD COLUMN synced INTEGER DEFAULT 0;`);
+  //   await database.execAsync('PRAGMA user_version = 2;');
+  // }
 }
 
 /**
