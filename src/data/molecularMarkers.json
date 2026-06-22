@@ -227,7 +227,7 @@
       "Smo-06": [234, 240],
       "Smo-13": [167, 173],
       "Smo-20": [145, 151]
-    ],
+    },
     "geographicRanges": {
       "mitochondrial": "Atlantic, Pacific, Indian Ocean, Arabian Gulf",
       "populationMarkers": ["NAT", "PAC", "IND"]

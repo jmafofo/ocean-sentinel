@@ -6,35 +6,64 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import LoginScreen from './src/screens/LoginScreen';
 import { isLoggedIn, logout } from './src/services/auth';
+import {
+  registerForPushNotificationsAsync,
+  addNotificationReceivedListener,
+  addNotificationResponseReceivedListener,
+  unregisterPushNotificationsAsync,
+} from './src/services/pushNotifications';
 
 export default function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [authDebug, setAuthDebug] = useState('');
 
+  // Check auth on launch + register for push notifications
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const ok = await isLoggedIn();
-        if (mounted) {
-          setLoggedIn(ok);
-          setAuthDebug(ok ? 'Token valid — signed in' : 'No session — showing login');
-        }
+        if (mounted) setLoggedIn(ok);
       } catch (err) {
         console.warn('[App] Auth check failed:', err.message);
-        if (mounted) setAuthDebug('Error: ' + err.message);
       } finally {
         if (mounted) setCheckingAuth(false);
       }
     })();
-    return () => { mounted = false; };
+
+    // Register for push notifications (works even if not logged in)
+    registerForPushNotificationsAsync().catch(console.error);
+
+    // Listen for notifications while app is in foreground
+    const notificationListener = addNotificationReceivedListener(notification => {
+      console.log('[Push] Received:', notification);
+    });
+
+    // Listen for notification taps
+    const responseListener = addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      console.log('[Push] Tapped:', data);
+      // TODO: navigate to relevant screen based on data.link
+    });
+
+    return () => {
+      mounted = false;
+      notificationListener.remove();
+      responseListener.remove();
+    };
   }, []);
 
+  // Re-register push token after login (so backend knows which user owns the token)
+  useEffect(() => {
+    if (loggedIn) {
+      registerForPushNotificationsAsync().catch(console.error);
+    }
+  }, [loggedIn]);
+
   const handleForceLogout = async () => {
+    await unregisterPushNotificationsAsync();
     await logout();
     setLoggedIn(false);
-    setAuthDebug('Signed out');
   };
 
   if (checkingAuth) {
