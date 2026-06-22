@@ -15,10 +15,20 @@ import PollutionScreen from '../screens/PollutionScreen';
 import MolecularMarkerScreen from '../screens/MolecularMarkerScreen';
 import LogCatchScreen from '../screens/LogCatchScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import CommunityScreen from '../screens/CommunityScreen';
+import PostDetailScreen from '../screens/PostDetailScreen';
+import ClubsScreen from '../screens/ClubsScreen';
+import ClubDetailScreen from '../screens/ClubDetailScreen';
+import SpotsScreen from '../screens/SpotsScreen';
+import SpotDetailScreen from '../screens/SpotDetailScreen';
+import SpotNavigationScreen from '../screens/SpotNavigationScreen';
+import ChartersScreen from '../screens/ChartersScreen';
 
 const Tab = createBottomTabNavigator();
 const CameraStack = createNativeStackNavigator();
 const HomeStack = createNativeStackNavigator();
+const CommunityStack = createNativeStackNavigator();
+const SpotsStack = createNativeStackNavigator();
 
 const THEME = {
   background: '#0a1628',
@@ -59,6 +69,38 @@ function HomeStackNavigator({ onLogout }) {
       <HomeStack.Screen name="Pollution" component={PollutionScreen} />
       <HomeStack.Screen name="Molecular" component={MolecularMarkerScreen} />
     </HomeStack.Navigator>
+  );
+}
+
+function CommunityStackNavigator() {
+  return (
+    <CommunityStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: THEME.background },
+      }}
+    >
+      <CommunityStack.Screen name="CommunityFeed" component={CommunityScreen} />
+      <CommunityStack.Screen name="PostDetail" component={PostDetailScreen} />
+      <CommunityStack.Screen name="Clubs" component={ClubsScreen} />
+      <CommunityStack.Screen name="ClubDetail" component={ClubDetailScreen} />
+    </CommunityStack.Navigator>
+  );
+}
+
+function SpotsStackNavigator() {
+  return (
+    <SpotsStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: THEME.background },
+      }}
+    >
+      <SpotsStack.Screen name="SpotsList" component={SpotsScreen} />
+      <SpotsStack.Screen name="SpotDetail" component={SpotDetailScreen} />
+      <SpotsStack.Screen name="SpotNavigation" component={SpotNavigationScreen} />
+      <SpotsStack.Screen name="Charters" component={ChartersScreen} />
+    </SpotsStack.Navigator>
   );
 }
 
@@ -110,9 +152,9 @@ export default function AppNavigator({ onLogout }) {
           tabBarIcon: ({ focused, color, size }) => {
             const icons = {
               Home: focused ? 'home' : 'home-outline',
+              Spots: focused ? 'location' : 'location-outline',
               Camera: focused ? 'camera' : 'camera-outline',
-              History: focused ? 'list' : 'list-outline',
-              Map: focused ? 'map' : 'map-outline',
+              Community: focused ? 'people' : 'people-outline',
               Profile: focused ? 'person' : 'person-outline',
             };
             return (
@@ -126,6 +168,7 @@ export default function AppNavigator({ onLogout }) {
         <Tab.Screen name="Home">
           {() => <HomeStackNavigator onLogout={onLogout} />}
         </Tab.Screen>
+        <Tab.Screen name="Spots" component={SpotsStackNavigator} />
         <Tab.Screen
           name="Camera"
           component={CameraStackNavigator}
@@ -138,8 +181,7 @@ export default function AppNavigator({ onLogout }) {
             tabBarLabel: '',
           }}
         />
-        <Tab.Screen name="History" component={HistoryScreen} />
-        <Tab.Screen name="Map" component={MapScreen} />
+        <Tab.Screen name="Community" component={CommunityStackNavigator} />
         <Tab.Screen name="Profile">
           {(props) => <ProfileTabScreen {...props} onLogout={onLogout} />}
         </Tab.Screen>

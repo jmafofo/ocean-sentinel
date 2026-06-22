@@ -299,3 +299,174 @@ export async function registerRFID({ rfidTag, species, scientificName, firstCatc
   }
   return res.json();
 }
+
+// ── Community Feed ────────────────────────────────────────────────────────────
+
+/**
+ * Fetch posts from the social feed.
+ */
+export async function fetchFeedPosts({ limit = 20, cursor } = {}) {
+  const params = new URLSearchParams({ limit: String(limit), feed: 'following' });
+  if (cursor) params.set('cursor', cursor);
+  const res = await apiFetch(`/api/posts?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch feed posts');
+  return res.json();
+}
+
+/**
+ * Fetch public community catches.
+ */
+export async function fetchPublicCatches({ limit = 20 } = {}) {
+  const params = new URLSearchParams({ limit: String(limit), public: 'true' });
+  const res = await apiFetch(`/api/catches?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch public catches');
+  return res.json();
+}
+
+/**
+ * Like a post.
+ */
+export async function likePost(postId) {
+  const res = await apiFetch(`/api/posts/${postId}/like`, { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to like post');
+  return res.json();
+}
+
+/**
+ * Unlike a post.
+ */
+export async function unlikePost(postId) {
+  const res = await apiFetch(`/api/posts/${postId}/like`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to unlike post');
+  return res.json();
+}
+
+/**
+ * Fetch comments for a post.
+ */
+export async function fetchPostComments(postId) {
+  const res = await apiFetch(`/api/posts/${postId}/comments`);
+  if (!res.ok) throw new Error('Failed to fetch comments');
+  return res.json();
+}
+
+/**
+ * Add a comment to a post.
+ */
+export async function addPostComment(postId, body) {
+  const res = await apiFetch(`/api/posts/${postId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  });
+  if (!res.ok) throw new Error('Failed to add comment');
+  return res.json();
+}
+
+// ── Clubs ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Fetch clubs list.
+ */
+export async function fetchClubs({ filter = 'my' } = {}) {
+  const params = new URLSearchParams({ filter });
+  const res = await apiFetch(`/api/clubs?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch clubs');
+  return res.json();
+}
+
+/**
+ * Get club detail.
+ */
+export async function fetchClub(slug) {
+  const res = await apiFetch(`/api/clubs/${slug}`);
+  if (!res.ok) throw new Error('Failed to fetch club');
+  return res.json();
+}
+
+/**
+ * Create a club.
+ */
+export async function createClub({ name, description }) {
+  const res = await apiFetch('/api/clubs', {
+    method: 'POST',
+    body: JSON.stringify({ name, description }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to create club');
+  }
+  return res.json();
+}
+
+/**
+ * Invite a user to a club.
+ */
+export async function inviteToClub(slug, username) {
+  const res = await apiFetch(`/api/clubs/${slug}/members`, {
+    method: 'POST',
+    body: JSON.stringify({ username }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to invite');
+  }
+  return res.json();
+}
+
+/**
+ * Accept invite / join a club.
+ */
+export async function joinClub(slug) {
+  const res = await apiFetch(`/api/clubs/${slug}/join`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to join club');
+  }
+  return res.json();
+}
+
+/**
+ * Fetch club trip posts.
+ */
+export async function fetchClubPosts(slug) {
+  const res = await apiFetch(`/api/clubs/${slug}/posts`);
+  if (!res.ok) throw new Error('Failed to fetch club posts');
+  return res.json();
+}
+
+// ── Trip RSVPs ────────────────────────────────────────────────────────────────
+
+/**
+ * RSVP to a trip.
+ */
+export async function rsvpToTrip(tripId, status) {
+  const res = await apiFetch(`/api/trips/${tripId}/rsvp`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? 'Failed to RSVP');
+  }
+  return res.json();
+}
+
+// ── Charters ──────────────────────────────────────────────────────────────────
+
+/**
+ * Fetch charter directory.
+ */
+export async function fetchCharters() {
+  const res = await apiFetch('/api/charters');
+  if (!res.ok) throw new Error('Failed to fetch charters');
+  return res.json();
+}
+
+/**
+ * Get charter detail.
+ */
+export async function fetchCharter(slug) {
+  const res = await apiFetch(`/api/charters/${slug}`);
+  if (!res.ok) throw new Error('Failed to fetch charter');
+  return res.json();
+}
